@@ -1,12 +1,22 @@
-CFLAGS = -Wall -Wextra
-SRCS   = main.c
+CFLAGS = -Wall -Wextra -g
+SRCS   = main.c sysenv.c cell.c compound.c common.c
 
-all: dsy-sysenv
+all: dsy-sysenv dsy-dump-cell samples
 
 dsy-sysenv: $(SRCS)
 	gcc $(CFLAGS) -o $@ $+
 
-clean:
-	rm -f *~ dsy-sysenv
+# dsy-exec-cell: dsy-exec-cell.c sysenv.c cell.c compound.c common.c
+# 	T.B.D
 
-.PHONY: clean
+dsy-dump-cell: dsy-dump-cell.c sysenv.c cell.c compound.c common.c
+	gcc $(CFLAGS) -o $@ $+
+
+samples:
+	make -C $@
+
+clean:
+	rm -f *~ tools/*~ dsy-sysenv dsy-dump-cell
+	make -C samples clean
+
+.PHONY: samples clean

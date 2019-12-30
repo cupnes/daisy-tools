@@ -23,6 +23,8 @@ struct __attribute__((packed)) cell_attributes {
 	comp_data_t args_buf[CELL_MAX_ARGS];
 
 	unsigned long long num_codns;
+
+	char filename[MAX_FILENAME_LEN];
 };
 
 struct __attribute__((packed)) codon {
@@ -47,9 +49,9 @@ struct __attribute__((packed)) cell {
 	comp_data_t (*func)(comp_data_t, comp_data_t, comp_data_t, comp_data_t);
 };
 
-FILE *cell_open_file(const char *name, const char *mode);
-void cell_load_from_file(char *name, struct cell *cell);
-void cell_save_to_file(char *name, struct cell *cell, bool_t do_free);
-void cell_remove_file(char *name);
+void cell_load_from_file(struct cell *cell);
+void cell_save_to_file(struct cell *cell, bool_t do_free);
+void cell_remove_file(struct cell *cell);
 void cell_do_cycle(char *filename);
+void cell_exec(struct cell *cell, struct compound *prod);
 void cell_dump(struct cell *cell);

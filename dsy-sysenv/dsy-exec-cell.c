@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "compound.h"
 #include "cell.h"
-#include "common.h"
 
 void usage(char *prog_name)
 {
@@ -13,13 +13,21 @@ void usage(char *prog_name)
 
 int main(int argc, char *argv[])
 {
-	if (argc < 2)
+	if (argc != 2)
 		usage(argv[0]);
 
+	char *filename = argv[1];
 	struct cell cell;
-	strncpy(cell.attr.filename, argv[1], MAX_FILENAME_LEN);
+	strncpy(cell.attr.filename, filename, MAX_FILENAME_LEN);
 	cell_load_from_file(&cell);
-	cell_dump(&cell);
+
+	struct compound prod;
+	cell_exec(&cell, &prod);
+
+	cell_save_to_file(&cell, TRUE);
+
+	if (cell.attr.has_retval == TRUE)
+		comp_dump(&prod);
 
 	return EXIT_SUCCESS;
 }

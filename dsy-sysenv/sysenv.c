@@ -105,13 +105,29 @@ void sysenv_put_comp(enum COMP_TYPE type, char *name, struct compound *comp)
 	comp_save_to_file(dirname, name, comp);
 }
 
-void sysenv_put_cell(char *name, struct cell *cell)
+void sysenv_put_cell(struct cell *cell)
 {
-	char _name[MAX_FILENAME_LEN];
-	if (name == NULL) {
-		create_filename(CELL_DIR_NAME, _name, MAX_FILENAME_LEN);
-		name = _name;
+	if (cell->attr.filename[0] == '\0') {
+		create_filename(CELL_DIR_NAME, cell->attr.filename,
+				MAX_FILENAME_LEN);
 	}
 
-	cell_save_to_file(name, cell, TRUE);
+	cell_save_to_file(cell, TRUE);
+}
+
+void sysenv_exec_and_eval(struct cell *cell)
+{
+	char cmd[MAX_EXTCMD_LEN];
+	sprintf(cmd, "%s %s", EXTCMD_EVAL_PATH, cell->attr.filename);
+
+	int status = system(cmd);
+	ASSERT(WIFEXITED(status));
+	ASSERT(!WIFSIGNALED(status));
+	ASSERT(!WIFSTOPPED(status));
+
+	int exitstatus = WEXITSTATUS(status);
+	ASSERT(exitstatus >= 0);
+	ASSERT(exitstatus <= 100);
+
+	cell->attr.fitness = (unsigned char)exitstatus;
 }

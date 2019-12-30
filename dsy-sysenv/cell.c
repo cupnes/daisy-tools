@@ -3,13 +3,15 @@
 #include <string.h>
 #include <err.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include "compound.h"
 #include "cell.h"
 #include "sysenv.h"
 #include "common.h"
 
-static void metabolism_and_motion(struct cell *cell)
+/* 戻り値：TRUE=実行可能になった/FALSE=まだ実行不可 */
+static bool_t get_args(struct cell *cell)
 {
 	struct compound comp;
 
@@ -24,24 +26,15 @@ static void metabolism_and_motion(struct cell *cell)
 			cell->attr.args_buf[cell->attr.has_args++] = comp.int64;
 	}
 
-	/* 引数有りでまだ揃っていなければここで終了 */
+	/* 引数が揃っていなければ実行できない */
+	bool_t is_executable;
 	if ((cell->attr.num_args > 0)
 	    && (cell->attr.has_args < cell->attr.num_args))
-		return;
+		is_executable = FALSE;
+	else
+		is_executable = TRUE;
 
-	/* そうでないなら(引数無しあるいは引数が全て揃っているなら)関数を実行 */
-	struct compound prod;
-	prod.int64 = cell->func(cell->attr.args_buf[0], cell->attr.args_buf[1],
-				cell->attr.args_buf[2], cell->attr.args_buf[3]);
-	cell->attr.has_args = 0;
-
-	/* 戻り値が無いならここで終了 */
-	if (cell->attr.has_retval == FALSE)
-		return;
-
-	/* 戻り値で化合物ファイルを生成し環境へ放出 */
-	prod.len = sizeof(comp_data_t);
-	sysenv_put_comp(COMP_TYPE_DATA, NULL, &prod);
+	return is_executable;
 }
 
 static bool_t growth(struct cell *cell)
@@ -131,6 +124,7 @@ static void division(struct cell *cell)
 	for (i = 0; i < CELL_MAX_ARGS; i++)
 		cell_new.attr.args_buf[i] = 0;
 	cell_new.attr.num_codns = cell->attr.num_codns;
+	cell_new.attr.filename[0] = '\0';
 
 	/* DNAを複製 */
 	cell_new.codn_list = copy_codon_list(cell);
@@ -139,7 +133,7 @@ static void division(struct cell *cell)
 	cell_new.func = central_dogma(cell);
 
 	/* 新細胞を環境へ放出 */
-	sysenv_put_cell(NULL, &cell_new);
+	sysenv_put_cell(&cell_new);
 }
 
 static void death(struct cell *cell)
@@ -170,34 +164,39 @@ static void death(struct cell *cell)
 	/* タンパク質 */
 	int _res = munmap(cell->func, cell->attr.func_size);
 	ASSERT(_res == 0);
+
+	/* ファイルを削除 */
+	cell_remove_file(cell);
 }
 
-FILE *cell_open_file(const char *name, const char *mode)
+static FILE *open_cell_file(struct cell *cell, const char *mode)
 {
 	/* パスを作成 */
 	char path[MAX_PATH_LEN + 1] = CELL_DIR_NAME;
-	strncpy(&path[CELL_DIR_LEN], name, (MAX_PATH_LEN + 1) - CELL_DIR_LEN);
+	strncpy(&path[CELL_DIR_LEN], cell->attr.filename,
+		(MAX_PATH_LEN + 1) - CELL_DIR_LEN);
 
 	/* ファイルを開く */
 	FILE *fp = fopen(path, mode);
 	return fp;
 }
 
-void cell_load_from_file(char *name, struct cell *cell)
+void cell_load_from_file(struct cell *cell)
 {
 	/* ファイルを開く */
-	FILE *load_fp = cell_open_file(name, "rb");
+	FILE *load_fp = open_cell_file(cell, "rb");
 	ASSERT(load_fp != NULL);
 
+	size_t n;
 	size_t read_bytes;
 
 	/* 属性情報をロード */
-	read_bytes = fread_safe(
-		&cell->attr, sizeof(struct cell_attributes), load_fp);
-	ASSERT(read_bytes == sizeof(struct cell_attributes));
+	n = sizeof(struct cell_attributes) - MAX_FILENAME_LEN;
+	read_bytes = fread_safe(&cell->attr, n, load_fp);
+	ASSERT(read_bytes == n);
 
 	/* DNAをロード */
-	size_t n = sizeof(struct codon) * cell->attr.num_codns;
+	n = sizeof(struct codon) * cell->attr.num_codns;
 	cell->codn_list = malloc(n);
 	ASSERT(cell->codn_list != NULL);
 	read_bytes = fread_safe(cell->codn_list, n, load_fp);
@@ -213,26 +212,25 @@ void cell_load_from_file(char *name, struct cell *cell)
 
 	/* ファイルを閉じる */
 	fclose(load_fp);
-
-	/* 読み込んだらファイルは削除 */
-	cell_remove_file(name);
 }
 
-void cell_save_to_file(char *name, struct cell *cell, bool_t do_free)
+void cell_save_to_file(struct cell *cell, bool_t do_free)
 {
 	/* ファイルを新規作成(存在する場合は上書き) */
-	FILE *save_fp = cell_open_file(name, "w+b");
+	FILE *save_fp = open_cell_file(cell, "w+b");
 	ASSERT(save_fp != NULL);
 
+	size_t n;
 	size_t write_bytes;
+	int _res;
 
 	/* 属性情報をセーブ */
-	write_bytes = fwrite_safe(
-		&cell->attr, sizeof(struct cell_attributes), save_fp);
-	ASSERT(write_bytes == sizeof(struct cell_attributes));
+	n = sizeof(struct cell_attributes) - MAX_FILENAME_LEN;
+	write_bytes = fwrite_safe(&cell->attr, n, save_fp);
+	ASSERT(write_bytes == n);
 
 	/* DNAをセーブ */
-	size_t n = sizeof(struct codon) * cell->attr.num_codns;
+	n = sizeof(struct codon) * cell->attr.num_codns;
 	write_bytes = fwrite_safe(cell->codn_list, n, save_fp);
 	ASSERT(write_bytes == n);
 	if (do_free == TRUE)
@@ -242,19 +240,24 @@ void cell_save_to_file(char *name, struct cell *cell, bool_t do_free)
 	write_bytes = fwrite_safe(cell->func, cell->attr.func_size, save_fp);
 	ASSERT(write_bytes == cell->attr.func_size);
 	if (do_free == TRUE) {
-		int _res = munmap(cell->func, cell->attr.func_size);
+		_res = munmap(cell->func, cell->attr.func_size);
 		ASSERT(_res == 0);
 	}
 
 	/* ファイルを閉じる */
+	int fd = fileno(save_fp);
+	ASSERT(fd != -1);
+	_res = fsync(fd);
+	ASSERT(_res != -1);
 	fclose(save_fp);
 }
 
-void cell_remove_file(char *name)
+void cell_remove_file(struct cell *cell)
 {
 	/* パスを作成 */
 	char path[MAX_PATH_LEN + 1] = CELL_DIR_NAME;
-	strncpy(&path[CELL_DIR_LEN], name, (MAX_PATH_LEN + 1) - CELL_DIR_LEN);
+	strncpy(&path[CELL_DIR_LEN], cell->attr.filename,
+		(MAX_PATH_LEN + 1) - CELL_DIR_LEN);
 
 	/* 削除 */
 	ASSERT(remove(path) == 0);
@@ -264,10 +267,16 @@ void cell_do_cycle(char *filename)
 {
 	/* ファイルをロード */
 	struct cell cell;
-	cell_load_from_file(filename, &cell);
+	strncpy(cell.attr.filename, filename, MAX_FILENAME_LEN);
+	cell_load_from_file(&cell);
 
 	/* 代謝/運動 */
-	metabolism_and_motion(&cell);
+	bool_t is_executable = get_args(&cell);
+	if (is_executable == TRUE) {
+		cell_save_to_file(&cell, TRUE);
+		sysenv_exec_and_eval(&cell);
+		cell_load_from_file(&cell);
+	}
 
 	/* 成長 */
 	bool_t is_divisible = growth(&cell);
@@ -283,8 +292,28 @@ void cell_do_cycle(char *filename)
 		death(&cell);
 	} else {
 		/* ファイルへセーブ */
-		cell_save_to_file(filename, &cell, TRUE);
+		cell_save_to_file(&cell, TRUE);
 	}
+}
+
+/* 関数を実行した場合TRUEを、しなかった場合FALSEを返す */
+void cell_exec(struct cell *cell, struct compound *prod)
+{
+	/* 関数を実行 */
+	prod->int64 = cell->func(
+		cell->attr.args_buf[0], cell->attr.args_buf[1],
+		cell->attr.args_buf[2], cell->attr.args_buf[3]);
+	prod->len = sizeof(comp_data_t);
+
+	/* 引数を消費 */
+	cell->attr.has_args = 0;
+
+	/* 戻り値が無いならここで終了 */
+	if (cell->attr.has_retval == FALSE)
+		return;
+
+	/* 戻り値で化合物ファイルを生成し環境へ放出 */
+	sysenv_put_comp(COMP_TYPE_DATA, NULL, prod);
 }
 
 void cell_dump(struct cell *cell)

@@ -1,6 +1,9 @@
+#include <string.h>
+
 #include "../compound.h"
 #include "../cell.h"
 #include "../sysenv.h"
+#include "../common.h"
 
 /* インクリメンタ細胞の機械語コード
 protein0: REX Prefix=0x48, Opcode=0x89, Operand(ModR/M)=0xf8	mov %rdi,%rax
@@ -52,6 +55,7 @@ void create_incr_cell(void)
 	for (i = 0; i < CELL_MAX_ARGS; i++)
 		cell.attr.args_buf[i] = 0;
 	cell.attr.num_codns = INCR_NUM_CODON;
+	strncpy(cell.attr.filename, "incrementer", MAX_FILENAME_LEN);
 
 	/* DNAの初期化 */
 	cell.codn_list = incr_codn;
@@ -60,7 +64,7 @@ void create_incr_cell(void)
 	cell.func = (void *)incr_func_data;
 
 	/* 細胞のバイナリを生成 */
-	cell_save_to_file("incrementer", &cell, FALSE);
+	cell_save_to_file(&cell, FALSE);
 }
 
 void create_data_comp(unsigned long long val)

@@ -33,3 +33,4 @@ void comp_load_from_file(
 	const char *dirname, char *filename, struct compound *comp);
 void comp_save_to_file(char *dirname, char *filename, struct compound *comp);
 void comp_remove_file(const char *dirname, const char *filename);
+void comp_dump(struct compound *comp);

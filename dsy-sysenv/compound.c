@@ -52,3 +52,14 @@ void comp_remove_file(const char *dir, const char *name)
 	/* 削除 */
 	ASSERT(remove(path) == 0);
 }
+
+void comp_dump(struct compound *comp)
+{
+	printf("len\t: %lld\n", comp->len);
+	printf("int64\t: 0x%016llx\n", comp->int64);
+	printf("byte\t: 0x");
+	unsigned char i;
+	for (i = 0; i < sizeof(comp_data_t); i++)
+		printf(" %02x", comp->byte[i]);
+	printf("\n");
+}

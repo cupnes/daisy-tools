@@ -12,7 +12,8 @@
 #define EXTCMD_EVAL_PATH	EXTCMD_DIR EXTCMD_EVAL
 
 void sysenv_do_cycle(void);
-bool_t sysenv_get_comp(enum COMP_TYPE type, char *name, struct compound *comp);
+bool_t sysenv_get_comp(struct cell *cell,
+		       enum COMP_TYPE type, char *name, struct compound *comp);
 void sysenv_put_comp(enum COMP_TYPE type, char *name, struct compound *comp);
 void sysenv_put_cell(struct cell *cell);
 void sysenv_exec_and_eval(struct cell *cell);

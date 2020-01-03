@@ -8,6 +8,7 @@
 #define CELL_DIR_NAME	"cell/"
 #define CELL_DIR_LEN	5
 
+#define CELL_MAX_FITNESS	100
 #define CELL_MAX_ARGS	4
 
 struct __attribute__((packed)) cell_attributes {

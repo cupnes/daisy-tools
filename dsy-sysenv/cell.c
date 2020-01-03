@@ -22,7 +22,7 @@ static bool_t get_args(struct cell *cell)
 
 	/* (引数があるなら)化合物を一つ取得しバッファへ追加 */
 	if (cell->attr.num_args > 0) {
-		if (sysenv_get_comp(COMP_TYPE_DATA, NULL, &comp) == TRUE)
+		if (sysenv_get_comp(cell, COMP_TYPE_DATA, NULL, &comp) == TRUE)
 			cell->attr.args_buf[cell->attr.has_args++] = comp.int64;
 	}
 
@@ -42,7 +42,7 @@ static bool_t growth(struct cell *cell)
 	struct compound comp;
 
 	/* コード化合物を一つ取得 */
-	if (sysenv_get_comp(COMP_TYPE_CODE, NULL, &comp) == FALSE)
+	if (sysenv_get_comp(cell, COMP_TYPE_CODE, NULL, &comp) == FALSE)
 		return FALSE;
 
 	unsigned int i;

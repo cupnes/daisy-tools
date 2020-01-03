@@ -64,9 +64,15 @@ void sysenv_do_cycle(void)
 	free(cell_namelist);
 }
 
-bool_t sysenv_get_comp(enum COMP_TYPE type, char *name, struct compound *comp)
+bool_t sysenv_get_comp(struct cell *cell,
+		       enum COMP_TYPE type, char *name, struct compound *comp)
 {
 	ASSERT(type < MAX_COMP_TYPE);
+
+	/* 自然淘汰 */
+	int r = rand() % CELL_MAX_FITNESS;
+	if (r >= cell->attr.fitness)
+		return FALSE;
 
 	char *dirname = comp_type2dir[type];
 

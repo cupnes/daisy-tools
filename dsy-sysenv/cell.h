@@ -5,6 +5,9 @@
 #include "compound.h"
 #include "common.h"
 
+#define CELL_MAX_MEMBER_NAME_LEN	100
+#define CELL_MAX_MEMBER_VALUE_LEN	100
+
 #define CELL_DIR_NAME	"cell/"
 #define CELL_DIR_LEN	5
 

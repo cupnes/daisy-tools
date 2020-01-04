@@ -63,3 +63,13 @@ void comp_dump(struct compound *comp)
 		printf(" %02x", comp->byte[i]);
 	printf("\n");
 }
+
+void comp_print(struct compound *comp)
+{
+	unsigned char i;
+	for (i = 0; i < comp->len; i++) {
+		printf("%02x", comp->byte[i]);
+		if (i < (comp->len - 1))
+			printf(" ");
+	}
+}

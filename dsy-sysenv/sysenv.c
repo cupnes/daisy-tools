@@ -6,6 +6,22 @@
 #include "sysenv.h"
 #include "common.h"
 
+#define ALL_CODE_LIST_LEN	4096
+#define UPDATE_CODE_FILENAME	"update_code"
+
+static struct compound all_code_list[ALL_CODE_LIST_LEN];
+static unsigned int num_all_codes;
+
+int dot_filter(const struct dirent *d_ent)
+{
+	/* '.'から始まるファイル名はFalse */
+	if (d_ent->d_name[0] == '.')
+		return 0;
+
+	/* それ以外はTrue */
+	return 1;
+}
+
 static void create_filename(const char *dirname, char *name, int name_len)
 {
 	char cmd[MAX_EXTCMD_LEN];
@@ -35,24 +51,88 @@ static void create_filename(const char *dirname, char *name, int name_len)
 	}
 }
 
-int dot_filter(const struct dirent *d_ent)
+static void add_to_all_code_list(struct compound *comp)
 {
-	/* '.'から始まるファイル名はFalse */
-	if (d_ent->d_name[0] == '.')
-		return 0;
+	unsigned int i;
 
-	/* それ以外はTrue */
-	return 1;
+	for (i = 0; i < num_all_codes; i++) {
+		if (comp->int64 == all_code_list[i].int64)
+			return;
+	}
+
+	all_code_list[num_all_codes].int64 = comp->int64;
+	all_code_list[num_all_codes].len = comp->len;
+	num_all_codes++;
+}
+
+static void update_all_code_list(
+	struct dirent **cell_namelist, int num_cell_files)
+{
+	int i;
+	struct compound comp;
+
+	for (i = 0; i < ALL_CODE_LIST_LEN; i++)
+		all_code_list[i].len = 0;
+	num_all_codes = 0;
+
+	for (i = 0; i < num_cell_files; i++) {
+		struct cell cell;
+		strncpy(cell.attr.filename, cell_namelist[i]->d_name,
+			MAX_FILENAME_LEN);
+		cell_load_from_file(&cell);
+
+		unsigned long long j;
+		for (j = 0; j < cell.attr.num_codns; j++) {
+			comp.len = cell.codn_list[j].len;
+			comp.int64 = cell.codn_list[j].int64;
+			add_to_all_code_list(&comp);
+		}
+	}
+
+	char *dirname = comp_type2dir[COMP_TYPE_CODE];
+	struct dirent **code_namelist;
+	int num_code_files;
+	num_code_files = scandir(dirname, &code_namelist, dot_filter, NULL);
+	ASSERT(num_code_files >= 0);
+
+	for (i = 0; i < num_code_files; i++) {
+		comp_load_from_file(dirname, code_namelist[i]->d_name, &comp);
+		free(code_namelist[i]);
+		add_to_all_code_list(&comp);
+	}
+	free(code_namelist);
+}
+
+void sysenv_dump_all_code_list(void)
+{
+	unsigned int i;
+	for (i = 0; i < num_all_codes; i++) {
+		printf("[%04d] ", i);
+		comp_print(&all_code_list[i]);
+		printf("\n");
+	}
 }
 
 void sysenv_do_cycle(void)
 {
+	/* 初回フラグ */
+	static bool_t is_first_time = TRUE;
+
 	/* 細胞ディレクトリ内のファイル一覧を取得 */
 	struct dirent **cell_namelist;
 	int num_cell_files =
 		scandir(CELL_DIR_NAME, &cell_namelist, dot_filter, NULL);
 	ASSERT(num_cell_files >= 0);
 	ERROR_WITH(num_cell_files == 0, "No cell files.");
+
+	/* 初回あるいは"update_code"ファイルが有れば全コードリストを更新 */
+	FILE *update_code_fp = fopen(UPDATE_CODE_FILENAME, "r");
+	if (update_code_fp != NULL) {
+		fclose(update_code_fp);
+		update_all_code_list(cell_namelist, num_cell_files);
+		ASSERT(remove(UPDATE_CODE_FILENAME) == 0);
+	} else if (is_first_time == TRUE)
+		update_all_code_list(cell_namelist, num_cell_files);
 
 	/* 各細胞の1周期を実施 */
 	int i;
@@ -62,6 +142,8 @@ void sysenv_do_cycle(void)
 		free(cell_namelist[i]);
 	}
 	free(cell_namelist);
+
+	is_first_time = FALSE;
 }
 
 bool_t sysenv_get_comp(struct cell *cell,
@@ -136,4 +218,11 @@ void sysenv_exec_and_eval(struct cell *cell)
 	ASSERT(exitstatus <= 100);
 
 	cell->attr.fitness = (unsigned char)exitstatus;
+}
+
+void sysenv_get_mutated_codon(struct codon *codn)
+{
+	unsigned int i = rand() % num_all_codes;
+	codn->int64 = all_code_list[i].int64;
+	codn->len = all_code_list[i].len;
 }

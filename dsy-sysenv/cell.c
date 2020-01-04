@@ -103,6 +103,15 @@ static struct codon *copy_codon_list(struct cell *cell)
 		codn_new_list[i].int64 = cell->codn_list[i].int64;
 	}
 
+	bool_t do_mutate = (rand() % 100) < CELL_MUTATION_PROBABILITY;
+	if (do_mutate) {
+		struct codon mutated;
+		sysenv_get_mutated_codon(&mutated);
+		i = rand() % cell->attr.num_codns;
+		codn_new_list[i].len = mutated.len;
+		codn_new_list[i].int64 = mutated.int64;
+	}
+
 	return codn_new_list;
 }
 

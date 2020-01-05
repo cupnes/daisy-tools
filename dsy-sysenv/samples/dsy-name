@@ -1,0 +1,5 @@
+#!/bin/sh
+
+set -uex
+
+echo $RANDOM | md5sum | cut -c-10

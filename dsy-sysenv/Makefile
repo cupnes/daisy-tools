@@ -1,7 +1,9 @@
-CFLAGS = -Wall -Wextra -g
+CFLAGS = -Wall -Wextra -g -static
 SRCS   = main.c sysenv.c cell.c compound.c common.c
+BINS   = dsy-sysenv dsy-exec-cell dsy-dump-cell dsy-edit-cell dsy-cell2elf
+WORK_DIR ?= $(HOME)/dsy-work
 
-all: dsy-sysenv dsy-exec-cell dsy-dump-cell dsy-edit-cell samples
+all: $(BINS) samples
 
 dsy-sysenv: $(SRCS)
 	gcc $(CFLAGS) -o $@ $+
@@ -15,11 +17,38 @@ dsy-dump-cell: dsy-dump-cell.c sysenv.c cell.c compound.c common.c
 dsy-edit-cell: dsy-edit-cell.c sysenv.c cell.c compound.c common.c
 	gcc $(CFLAGS) -o $@ $+
 
+dsy-cell2elf: dsy-cell2elf.c sysenv.c cell.c compound.c common.c
+	gcc $(CFLAGS) -o $@ $+
+
 samples:
 	make -C $@
 
+busybox-static:
+	apt-get download $@
+	dpkg -x busybox-static*.deb $@
+
+setup: all busybox-static
+	mkdir -p $(WORK_DIR)/bin
+	mkdir -p $(WORK_DIR)/cell
+	mkdir -p $(WORK_DIR)/code
+	mkdir -p $(WORK_DIR)/data
+	cp $(BINS) $(WORK_DIR)/bin/
+	cp busybox-static/bin/busybox $(WORK_DIR)/bin/
+	ln -sf busybox $(WORK_DIR)/bin/sh
+	make -C samples setup WORK_DIR=$(WORK_DIR)
+
+run:
+	sudo chroot --userspec=$(shell id -u):$(shell id -g) $(WORK_DIR) dsy-sysenv
+
+sh:
+	sudo unshare -pf chroot --userspec=$(shell id -u):$(shell id -g) $(WORK_DIR) sh
+
+sush:
+	sudo unshare -pf chroot $(WORK_DIR) sh
+
 clean:
-	rm -f *~ tools/*~ dsy-sysenv dsy-exec-cell dsy-dump-cell dsy-edit-cell
+	rm -rf *~ tools/*~ dsy-sysenv dsy-exec-cell dsy-dump-cell	\
+		dsy-edit-cell dsy-cell2elf busybox-static*
 	make -C samples clean
 
-.PHONY: samples clean
+.PHONY: samples setup run sh sush clean

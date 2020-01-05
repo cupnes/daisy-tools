@@ -35,3 +35,4 @@ void comp_save_to_file(char *dirname, char *filename, struct compound *comp);
 void comp_remove_file(const char *dirname, const char *filename);
 void comp_dump(struct compound *comp);
 void comp_print(struct compound *comp);
+char *comp_make_str(struct compound *comp, char *buf);

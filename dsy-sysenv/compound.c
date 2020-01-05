@@ -73,3 +73,14 @@ void comp_print(struct compound *comp)
 			printf(" ");
 	}
 }
+
+char *comp_make_str(struct compound *comp, char *buf)
+{
+	unsigned char i;
+	for (i = 0; i < comp->len; i++) {
+		sprintf(&buf[i * 3], "%02x", comp->byte[i]);
+		if (i < (comp->len - 1))
+			buf[(i * 3) + 2] = ' ';
+	}
+	return buf;
+}

@@ -1,11 +1,24 @@
-CFLAGS = -Wall -Wextra
+TARGETS = create-init-cell create-incr-cell-data create-exit-cell
+CFLAGS = -Wall -Wextra -static
+COMMON_SRCS = ../sysenv.c ../cell.c ../compound.c ../common.c
+WORK_DIR ?= $(HOME)/dsy-work
 
-all: incrementer
+all: $(TARGETS)
 
-incrementer: incrementer.c ../sysenv.c	../cell.c ../compound.c ../common.c
+create-init-cell: create-init-cell.c $(COMMON_SRCS)
 	gcc $(CFLAGS) -o $@ $+
 
-clean:
-	rm -f *~ incrementer
+create-incr-cell-data: create-incr-cell-data.c $(COMMON_SRCS)
+	gcc $(CFLAGS) -o $@ $+
 
-.PHONY: clean
+create-exit-cell: create-exit-cell.c $(COMMON_SRCS)
+	gcc $(CFLAGS) -o $@ $+
+
+setup: $(TARGETS) create-init-codes dsy-name dsy-eval-init dsy-eval-incr
+	mkdir -p $(WORK_DIR)/samples
+	cp $+ $(WORK_DIR)/samples/
+
+clean:
+	rm -f *~ $(TARGETS)
+
+.PHONY: setup clean

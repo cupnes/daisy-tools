@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -uex
 
@@ -7,5 +7,5 @@ if [ $# -ne 1 ]; then
 	exit 200
 fi
 
-tools/dsy-exec-cell $1
+/bin/dsy-exec-cell $1
 exit 100

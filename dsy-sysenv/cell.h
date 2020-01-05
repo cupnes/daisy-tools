@@ -57,7 +57,12 @@ struct __attribute__((packed)) cell {
 
 void cell_load_from_file(struct cell *cell);
 void cell_save_to_file(struct cell *cell, bool_t do_free);
+void cell_save_as(struct cell *cell, bool_t do_free, char *path);
 void cell_remove_file(struct cell *cell);
 void cell_do_cycle(char *filename);
 void cell_exec(struct cell *cell, struct compound *prod);
+char *codn_make_str(struct codon *codn, char *buf);
+char *codn_list_make_str(
+	struct codon *codn_list, unsigned long long num_codns, char *buf);
 void cell_dump(struct cell *cell);
+char *cell_make_str(struct cell *cell, char *buf);

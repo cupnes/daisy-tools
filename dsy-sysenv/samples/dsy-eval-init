@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -uex
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 CELL_FILENAME" 1>&2
+	exit 200
+fi
+
+/bin/dsy-cell2elf $1 _test.elf
+chmod +x _test.elf
+./_test.elf && exit 100 || exit 10

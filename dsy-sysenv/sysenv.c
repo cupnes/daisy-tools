@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <syslog.h>
+#include <sys/mman.h>
 
 #include "cell.h"
 #include "compound.h"
@@ -87,6 +90,10 @@ static void update_all_code_list(
 			comp.int64 = cell.codn_list[j].int64;
 			add_to_all_code_list(&comp);
 		}
+
+		free(cell.codn_list);
+		int _res = munmap(cell.func, cell.attr.func_size);
+		ASSERT(_res == 0);
 	}
 
 	char *dirname = comp_type2dir[COMP_TYPE_CODE];
@@ -113,10 +120,18 @@ void sysenv_dump_all_code_list(void)
 	}
 }
 
+void sysenv_init(void)
+{
+	srand((unsigned int)time(NULL));
+
+	FILE *running_fp = fopen(RUNNING_FILENAME, "a+");
+	fclose(running_fp);
+}
+
 void sysenv_do_cycle(void)
 {
-	/* 初回フラグ */
-	static bool_t is_first_time = TRUE;
+	static unsigned int num_cycle = 0;
+	syslog(LOG_DEBUG, "sysenv: starts cycle %d.", num_cycle);
 
 	/* 細胞ディレクトリ内のファイル一覧を取得 */
 	struct dirent **cell_namelist;
@@ -129,10 +144,15 @@ void sysenv_do_cycle(void)
 	FILE *update_code_fp = fopen(UPDATE_CODE_FILENAME, "r");
 	if (update_code_fp != NULL) {
 		fclose(update_code_fp);
+		syslog(LOG_DEBUG, "sysenv: update all code list."
+		       "(update_code file exists)");
 		update_all_code_list(cell_namelist, num_cell_files);
 		ASSERT(remove(UPDATE_CODE_FILENAME) == 0);
-	} else if (is_first_time == TRUE)
+	} else if (num_cycle == 0) {
+		syslog(LOG_DEBUG, "sysenv: update all code list."
+		       " (this is the 1st cycle)");
 		update_all_code_list(cell_namelist, num_cell_files);
+	}
 
 	/* 各細胞の1周期を実施 */
 	int i;
@@ -143,7 +163,7 @@ void sysenv_do_cycle(void)
 	}
 	free(cell_namelist);
 
-	is_first_time = FALSE;
+	num_cycle++;
 }
 
 bool_t sysenv_get_comp(struct cell *cell,
@@ -158,39 +178,56 @@ bool_t sysenv_get_comp(struct cell *cell,
 
 	char *dirname = comp_type2dir[type];
 
+	syslog(LOG_DEBUG, "%s: a", __FUNCTION__);
+
 	struct dirent **namelist;
 	int num_files;
 	num_files = scandir(dirname, &namelist, dot_filter, NULL);
 	ASSERT(num_files >= 0);
+
+	syslog(LOG_DEBUG, "%s: b", __FUNCTION__);
 
 	if (num_files == 0) {
 		close_namelist(namelist, num_files);
 		return FALSE;
 	}
 
+	syslog(LOG_DEBUG, "%s: c", __FUNCTION__);
+
 	if (name == NULL)
 		name = namelist[rand() % num_files]->d_name;
+
+	syslog(LOG_DEBUG, "%s: d", __FUNCTION__);
 
 	comp_load_from_file(dirname, name, comp);
 	comp_remove_file(dirname, name);
 
+	syslog(LOG_DEBUG, "%s: e", __FUNCTION__);
+
 	close_namelist(namelist, num_files);
+	syslog(LOG_DEBUG, "%s: f", __FUNCTION__);
 	return TRUE;
 }
 
-void sysenv_put_comp(enum COMP_TYPE type, char *name, struct compound *comp)
+void sysenv_put_comp(
+	enum COMP_TYPE type, char *specified_name, struct compound *comp)
 {
 	ASSERT(type < MAX_COMP_TYPE);
 
 	char *dirname = comp_type2dir[type];
 
-	char _name[MAX_FILENAME_LEN];
-	if (name == NULL) {
-		create_filename(dirname, _name, MAX_FILENAME_LEN);
-		name = _name;
-	}
+	char name[MAX_FILENAME_LEN];
+	char *name_p = name;
+	if (specified_name == NULL)
+		create_filename(dirname, name_p, MAX_FILENAME_LEN);
+	else
+		name_p = specified_name;
 
-	comp_save_to_file(dirname, name, comp);
+	char comp_str[MAX_COMPOUND_ELEMENTS * 3];
+	syslog(LOG_DEBUG, "sysenv: put [%s] to %s.",
+	       comp_make_str(comp, comp_str), name_p);
+
+	comp_save_to_file(dirname, name_p, comp);
 }
 
 void sysenv_put_cell(struct cell *cell)
@@ -198,6 +235,8 @@ void sysenv_put_cell(struct cell *cell)
 	if (cell->attr.filename[0] == '\0') {
 		create_filename(CELL_DIR_NAME, cell->attr.filename,
 				MAX_FILENAME_LEN);
+		syslog(LOG_DEBUG, "sysenv[%s]: was named \"%s\".",
+		       cell->attr.filename, cell->attr.filename);
 	}
 
 	cell_save_to_file(cell, TRUE);
@@ -207,6 +246,7 @@ void sysenv_exec_and_eval(struct cell *cell)
 {
 	char cmd[MAX_EXTCMD_LEN];
 	sprintf(cmd, "%s %s", EXTCMD_EVAL_PATH, cell->attr.filename);
+	syslog(LOG_DEBUG, "sysenv[%s]: do %s", cell->attr.filename, cmd);
 
 	int status = system(cmd);
 	ASSERT(WIFEXITED(status));
@@ -218,6 +258,8 @@ void sysenv_exec_and_eval(struct cell *cell)
 	ASSERT(exitstatus <= 100);
 
 	cell->attr.fitness = (unsigned char)exitstatus;
+	syslog(LOG_DEBUG, "sysenv[%s]: new fitness is %d.",
+	       cell->attr.filename, cell->attr.fitness);
 }
 
 void sysenv_get_mutated_codon(struct codon *codn)
@@ -225,4 +267,29 @@ void sysenv_get_mutated_codon(struct codon *codn)
 	unsigned int i = rand() % num_all_codes;
 	codn->int64 = all_code_list[i].int64;
 	codn->len = all_code_list[i].len;
+}
+
+bool_t sysenv_is_running(void)
+{
+	bool_t is_running;
+
+	FILE *running_fp = fopen(RUNNING_FILENAME, "r");
+	if (running_fp != NULL)
+		is_running = TRUE;
+	else
+		is_running = FALSE;
+	fclose(running_fp);
+
+	return is_running;
+}
+
+void sysenv_exit(void)
+{
+	if (sysenv_is_running() == TRUE) {
+		ASSERT(remove(RUNNING_FILENAME) == 0);
+		syslog(LOG_DEBUG, "sysenv: exit. (running file was removed)");
+	} else {
+		syslog(LOG_DEBUG,
+		       "sysenv: exit. (running file was already removed)");
+	}
 }

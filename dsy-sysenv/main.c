@@ -1,31 +1,39 @@
-#include <time.h>
 #include <unistd.h>
+#include <string.h>
+#include <syslog.h>
 
 #include "sysenv.h"
 
-#define WAIT_SEC	1
-#define RUNNING_FILENAME	"running"
+#define PROG_NAME	"dsy-sysenv"
+#define DEFAULT_WAIT_SEC	1
+#define DEFAULT_LOG_LEVEL	0
 
-void init(void)
+static void usage(void)
 {
-	srand((unsigned int)time(NULL));
-
-	FILE *running_fp = fopen(RUNNING_FILENAME, "a+");
-	fclose(running_fp);
+	fprintf(stderr, "Usage: %s [-h|CYCLE_WAIT_SEC]\n", PROG_NAME);
+	exit(EXIT_FAILURE);
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
-	init();
+	unsigned int wait_sec;
 
-	while (TRUE) {
+	if (argc == 1) {
+		wait_sec = DEFAULT_WAIT_SEC;
+	} else if (argc == 2) {
+		if (!strcmp(argv[1], "-h"))
+			usage();
+		wait_sec = (unsigned int)atoi(argv[1]);
+	} else
+		usage();
+
+	openlog(PROG_NAME, LOG_CONS | LOG_PID, LOG_USER);
+	syslog(LOG_DEBUG, "main: wait_sec is %d.", wait_sec);
+
+	sysenv_init();
+
+	while (sysenv_is_running() == TRUE) {
 		sysenv_do_cycle();
-
-		FILE *running_fp = fopen(RUNNING_FILENAME, "r");
-		if (running_fp == NULL)
-			break;
-		fclose(running_fp);
-
-		sleep(WAIT_SEC);
+		sleep(wait_sec);
 	}
 }

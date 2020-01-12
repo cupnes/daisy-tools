@@ -64,5 +64,5 @@ void cell_exec(struct cell *cell, struct compound *prod);
 char *codn_make_str(struct codon *codn, char *buf);
 char *codn_list_make_str(
 	struct codon *codn_list, unsigned long long num_codns, char *buf);
-void cell_dump(struct cell *cell);
-char *cell_make_str(struct cell *cell, char *buf);
+void cell_dump(struct cell *cell, bool_t is_verbose);
+char *cell_make_str(struct cell *cell, bool_t is_verbose, char *buf);

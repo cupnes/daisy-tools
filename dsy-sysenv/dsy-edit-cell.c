@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 	for (i = 1; i < (argc - 1); i++)
 		option_parser(argv[i], &cell);
 
-	cell_dump(&cell);
+	cell_dump(&cell, FALSE);
 
 	bool_t is_yes = FALSE;
 	while (TRUE) {

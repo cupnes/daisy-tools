@@ -399,7 +399,8 @@ static void division(struct cell *cell)
 	ASSERT(cell_str_buf != NULL);
 	syslog(LOG_INFO,
 	       "cell[%s,new]: a new cell was generated as follows.\n%s",
-	       cell->attr.filename, cell_make_str(&cell_new, cell_str_buf));
+	       cell->attr.filename,
+	       cell_make_str(&cell_new, TRUE, cell_str_buf));
 	free(cell_str_buf);
 
 	/* 新細胞を環境へ放出 */
@@ -603,7 +604,8 @@ void cell_do_cycle(char *filename)
 	if (cell.attr.life_left == 0) {
 		char *cell_str_buf = malloc(CELL_STR_BUF_SIZE);
 		syslog(LOG_DEBUG, "cell[%s]: following cell life is zero.\n%s",
-		       cell.attr.filename, cell_make_str(&cell, cell_str_buf));
+		       cell.attr.filename,
+		       cell_make_str(&cell, TRUE, cell_str_buf));
 		free(cell_str_buf);
 
 		/* 死 */
@@ -661,7 +663,7 @@ char *codn_list_make_str(
 	return buf;
 }
 
-void cell_dump(struct cell *cell)
+void cell_dump(struct cell *cell, bool_t is_verbose)
 {
 	unsigned int i, j;
 
@@ -689,14 +691,25 @@ void cell_dump(struct cell *cell)
 			printf("  .len\t = %d\n", cell->codn_list[i].len);
 			printf("  .is_buffered\t = %d\n",
 			       cell->codn_list[i].is_buffered);
-			printf("  ._rsv\t = 0x%04x\n", cell->codn_list[i]._rsv);
-			printf("  ._rsv2\t = 0x%08x\n",
-			       cell->codn_list[i]._rsv2);
-			printf("  .int64\t = 0x%016llx\n",
-			       cell->codn_list[i].int64);
-			printf("  .byte\t = 0x");
-			for (j = 0; j < 8; j++)
-				printf(" %02x", cell->codn_list[i].byte[j]);
+			if (is_verbose == TRUE) {
+				printf("  ._rsv\t = 0x%04x\n",
+				       cell->codn_list[i]._rsv);
+				printf("  ._rsv2\t = 0x%08x\n",
+				       cell->codn_list[i]._rsv2);
+				printf("  .int64\t = 0x%016llx\n",
+				       cell->codn_list[i].int64);
+				printf("  .byte\t = 0x");
+				for (j = 0; j < 8; j++) {
+					printf(" %02x",
+					       cell->codn_list[i].byte[j]);
+				}
+			} else {
+				printf("  .byte\t = 0x");
+				for (j = 0; j < cell->codn_list[i].len; j++) {
+					printf(" %02x",
+					       cell->codn_list[i].byte[j]);
+				}
+			}
 			printf("\n");
 		}
 	}
@@ -716,7 +729,7 @@ void cell_dump(struct cell *cell)
 	printf("\n");
 }
 
-char *cell_make_str(struct cell *cell, char *buf)
+char *cell_make_str(struct cell *cell, bool_t is_verbose, char *buf)
 {
 	unsigned int i, j;
 	char *buf_p = buf;
@@ -749,16 +762,27 @@ char *cell_make_str(struct cell *cell, char *buf)
 					 cell->codn_list[i].len);
 			buf_p += sprintf(buf_p, "  .is_buffered\t = %d\n",
 			       cell->codn_list[i].is_buffered);
-			buf_p += sprintf(buf_p, "  ._rsv\t = 0x%04x\n",
-					 cell->codn_list[i]._rsv);
-			buf_p += sprintf(buf_p, "  ._rsv2\t = 0x%08x\n",
-			       cell->codn_list[i]._rsv2);
-			buf_p += sprintf(buf_p, "  .int64\t = 0x%016llx\n",
-			       cell->codn_list[i].int64);
-			buf_p += sprintf(buf_p, "  .byte\t = 0x");
-			for (j = 0; j < 8; j++) {
-				buf_p += sprintf(buf_p, " %02x",
-						 cell->codn_list[i].byte[j]);
+			if (is_verbose == TRUE) {
+				buf_p += sprintf(buf_p, "  ._rsv\t = 0x%04x\n",
+						 cell->codn_list[i]._rsv);
+				buf_p += sprintf(buf_p, "  ._rsv2\t = 0x%08x\n",
+						 cell->codn_list[i]._rsv2);
+				buf_p += sprintf(
+					buf_p, "  .int64\t = 0x%016llx\n",
+					cell->codn_list[i].int64);
+				buf_p += sprintf(buf_p, "  .byte\t = 0x");
+				for (j = 0; j < 8; j++) {
+					buf_p += sprintf(
+						buf_p, " %02x",
+						cell->codn_list[i].byte[j]);
+				}
+			} else {
+				buf_p += sprintf(buf_p, "  .byte\t = 0x");
+				for (j = 0; j < cell->codn_list[i].len; j++) {
+					buf_p += sprintf(
+						buf_p, " %02x",
+						cell->codn_list[i].byte[j]);
+				}
 			}
 			buf_p += sprintf(buf_p, "\n");
 		}

@@ -17,25 +17,35 @@
 #define FUNC_BUF_SIZE	100
 
 struct codon exit_codn[EXIT_NUM_CODON] = {
+	/* { */
+	/* 	.len = 7, */
+	/* 	.is_buffered = FALSE, */
+	/* 	.byte = {0x48, 0xc7, 0xc7, 0x01, 0x00, 0x00, 0x00} */
+	/* 	/\* mov    $0x1,%rdi *\/ */
+	/* }, */
 	{
 		.len = 3,
 		.is_buffered = FALSE,
 		.byte = {0x48, 0x31, 0xff}
+		/* xor	%rdi,	%rdi */
 	},
 	{
 		.len = 7,
 		.is_buffered = FALSE,
 		.byte = {0x48, 0xc7, 0xc0, 0x3c, 0x00, 0x00, 0x00}
+		/* mov	$60,	%rax */
 	},
 	{
 		.len = 2,
 		.is_buffered = FALSE,
 		.byte = {0x0f, 0x05}
+		/* syscall */
 	},
 	{
 		.len = 1,
 		.is_buffered = FALSE,
 		.byte = {0xc3}
+		/* ret */
 	}
 };
 

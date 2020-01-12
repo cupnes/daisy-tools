@@ -1,6 +1,7 @@
 CFLAGS = -Wall -Wextra -g -static
 SRCS   = main.c sysenv.c cell.c compound.c common.c
-BINS   = dsy-sysenv dsy-exec-cell dsy-dump-cell dsy-edit-cell dsy-cell2elf
+BINS = dsy-sysenv dsy-exec-cell dsy-dump-cell dsy-edit-cell	\
+	dsy-cell2elf dsy-elf2asm dsy-dump-ascii-list
 WORK_DIR ?= $(HOME)/dsy-work
 
 all: $(BINS) samples
@@ -20,6 +21,9 @@ dsy-edit-cell: dsy-edit-cell.c sysenv.c cell.c compound.c common.c
 dsy-cell2elf: dsy-cell2elf.c sysenv.c cell.c compound.c common.c
 	gcc $(CFLAGS) -o $@ $+
 
+dsy-dump-ascii-list: dsy-dump-ascii-list.c sysenv.c cell.c compound.c common.c
+	gcc $(CFLAGS) -o $@ $+
+
 samples:
 	make -C $@
 
@@ -27,7 +31,15 @@ busybox-static:
 	apt-get download $@
 	dpkg -x busybox-static*.deb $@
 
-setup: all busybox-static
+setup: all
+	mkdir -p $(WORK_DIR)/bin
+	mkdir -p $(WORK_DIR)/cell
+	mkdir -p $(WORK_DIR)/code
+	mkdir -p $(WORK_DIR)/data
+	cp $(BINS) $(WORK_DIR)/bin/
+	make -C samples setup WORK_DIR=$(WORK_DIR)
+
+setup_rootfs: all busybox-static
 	mkdir -p $(WORK_DIR)/bin
 	mkdir -p $(WORK_DIR)/cell
 	mkdir -p $(WORK_DIR)/code
@@ -48,7 +60,8 @@ sush:
 
 clean:
 	rm -rf *~ tools/*~ dsy-sysenv dsy-exec-cell dsy-dump-cell	\
-		dsy-edit-cell dsy-cell2elf busybox-static*
+		dsy-edit-cell dsy-cell2elf dsy-dump-ascii-list		\
+		busybox-static*
 	make -C samples clean
 
 .PHONY: samples setup run sh sush clean

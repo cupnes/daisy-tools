@@ -33,7 +33,12 @@ int main(int argc, char *argv[])
 	sysenv_init();
 
 	while (sysenv_is_running() == TRUE) {
+		syslog(LOG_DEBUG, "%s: a", __FUNCTION__);
 		sysenv_do_cycle();
+		syslog(LOG_DEBUG, "%s: a", __FUNCTION__);
 		sleep(wait_sec);
+		syslog(LOG_DEBUG, "%s: a", __FUNCTION__);
 	}
+
+	return EXIT_SUCCESS;
 }

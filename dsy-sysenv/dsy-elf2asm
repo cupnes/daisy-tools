@@ -1,0 +1,34 @@
+#!/bin/sh
+
+set -uex
+
+SKIP_BYTES_TO_CODE=216
+
+usage()
+{
+	echo "Usage: $0 ELF_FILENAME [ASM_FILENAME]" 1>&2
+	exit 200
+}
+
+case $# in
+1)
+	elf=$1
+	asm=''
+	;;
+2)
+	elf=$1
+	asm=$2
+	;;
+*)
+	usage
+	;;
+esac
+
+dd if=${elf} bs=1 skip=${SKIP_BYTES_TO_CODE} >.${elf}.bin
+if [ -z "${asm}" ]; then
+	objdump -D -b binary -m i386:x86-64 .${elf}.bin
+else
+	objdump -D -b binary -m i386:x86-64 .${elf}.bin >${asm}
+fi
+
+rm .${elf}.bin

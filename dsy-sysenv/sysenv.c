@@ -96,18 +96,28 @@ static void update_all_code_list(
 		ASSERT(_res == 0);
 	}
 
+	syslog(LOG_DEBUG, "%s: a", __FUNCTION__);
+
 	char *dirname = comp_type2dir[COMP_TYPE_CODE];
 	struct dirent **code_namelist;
 	int num_code_files;
 	num_code_files = scandir(dirname, &code_namelist, dot_filter, NULL);
 	ASSERT(num_code_files >= 0);
 
+	syslog(LOG_DEBUG, "%s: b", __FUNCTION__);
+
 	for (i = 0; i < num_code_files; i++) {
+		syslog(LOG_DEBUG, "%s: b1", __FUNCTION__);
 		comp_load_from_file(dirname, code_namelist[i]->d_name, &comp);
+		syslog(LOG_DEBUG, "%s: b2", __FUNCTION__);
 		free(code_namelist[i]);
+		syslog(LOG_DEBUG, "%s: b3", __FUNCTION__);
 		add_to_all_code_list(&comp);
+		syslog(LOG_DEBUG, "%s: b4", __FUNCTION__);
 	}
 	free(code_namelist);
+
+	syslog(LOG_DEBUG, "%s: c", __FUNCTION__);
 }
 
 void sysenv_dump_all_code_list(void)
@@ -154,11 +164,15 @@ void sysenv_do_cycle(void)
 		update_all_code_list(cell_namelist, num_cell_files);
 	}
 
+	syslog(LOG_DEBUG, "%s: a", __FUNCTION__);
+
 	/* 各細胞の1周期を実施 */
 	int i;
 	for (i = 0; i < num_cell_files; i++) {
 		/* TODO: マルチスレッド化 */
+		syslog(LOG_DEBUG, "%s: b", __FUNCTION__);
 		cell_do_cycle(cell_namelist[i]->d_name);
+		syslog(LOG_DEBUG, "%s: c", __FUNCTION__);
 		free(cell_namelist[i]);
 	}
 	free(cell_namelist);
@@ -242,7 +256,7 @@ void sysenv_put_cell(struct cell *cell)
 	cell_save_to_file(cell, TRUE);
 }
 
-void sysenv_exec_and_eval(struct cell *cell)
+unsigned char sysenv_exec_and_eval(struct cell *cell)
 {
 	char cmd[MAX_EXTCMD_LEN];
 	sprintf(cmd, "%s %s", EXTCMD_EVAL_PATH, cell->attr.filename);
@@ -257,9 +271,7 @@ void sysenv_exec_and_eval(struct cell *cell)
 	ASSERT(exitstatus >= 0);
 	ASSERT(exitstatus <= 100);
 
-	cell->attr.fitness = (unsigned char)exitstatus;
-	syslog(LOG_DEBUG, "sysenv[%s]: new fitness is %d.",
-	       cell->attr.filename, cell->attr.fitness);
+	return (unsigned char)exitstatus;
 }
 
 void sysenv_get_mutated_codon(struct codon *codn)
@@ -271,14 +283,18 @@ void sysenv_get_mutated_codon(struct codon *codn)
 
 bool_t sysenv_is_running(void)
 {
+	syslog(LOG_DEBUG, "%s: a", __FUNCTION__);
+
 	bool_t is_running;
 
 	FILE *running_fp = fopen(RUNNING_FILENAME, "r");
-	if (running_fp != NULL)
+	if (running_fp != NULL) {
+		fclose(running_fp);
 		is_running = TRUE;
-	else
+	} else
 		is_running = FALSE;
-	fclose(running_fp);
+
+	syslog(LOG_DEBUG, "%s: b %d", __FUNCTION__, is_running);
 
 	return is_running;
 }

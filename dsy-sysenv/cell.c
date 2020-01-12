@@ -400,7 +400,7 @@ static void division(struct cell *cell)
 	syslog(LOG_INFO,
 	       "cell[%s,new]: a new cell was generated as follows.\n%s",
 	       cell->attr.filename,
-	       cell_make_str(&cell_new, TRUE, cell_str_buf));
+	       cell_make_json(&cell_new, TRUE, cell_str_buf));
 	free(cell_str_buf);
 
 	/* 新細胞を環境へ放出 */
@@ -569,26 +569,34 @@ void cell_remove_file(struct cell *cell)
 
 void cell_do_cycle(char *filename)
 {
+	syslog(LOG_DEBUG, "%s: a", __FUNCTION__);
+
 	/* ファイルをロード */
 	struct cell cell;
 	strncpy(cell.attr.filename, filename, MAX_FILENAME_LEN);
 	cell_load_from_file(&cell);
 
+	syslog(LOG_DEBUG, "%s: b", __FUNCTION__);
+
 	/* 代謝/運動 */
 	bool_t is_executable = get_args(&cell);
 	if (is_executable == TRUE) {
 		cell_save_to_file(&cell, TRUE);
-		sysenv_exec_and_eval(&cell);
+		unsigned char new_fitness = sysenv_exec_and_eval(&cell);
+		syslog(LOG_DEBUG, "cell[%s]: new fitness is %d.",
+		       cell.attr.filename, new_fitness);
 		cell_load_from_file(&cell);
+		cell.attr.fitness = new_fitness;
 		if (cell.attr.fitness == CELL_MAX_FITNESS) {
 			cell_save_as(&cell, FALSE, OUTPUT_FILENAME);
 			syslog(LOG_DEBUG,
 			       "cell[%s]: fitness is MAX_FITNESS(%d).",
 			       cell.attr.filename, cell.attr.fitness);
 			sysenv_exit();
-			return;
 		}
 	}
+
+	syslog(LOG_DEBUG, "%s: c", __FUNCTION__);
 
 	/* 成長 */
 	bool_t is_divisible = growth(&cell);
@@ -596,6 +604,8 @@ void cell_do_cycle(char *filename)
 		/* 増殖 */
 		division(&cell);
 	}
+
+	syslog(LOG_DEBUG, "%s: d", __FUNCTION__);
 
 	/* 寿命を減らす */
 	cell.attr.life_left--;
@@ -605,7 +615,7 @@ void cell_do_cycle(char *filename)
 		char *cell_str_buf = malloc(CELL_STR_BUF_SIZE);
 		syslog(LOG_DEBUG, "cell[%s]: following cell life is zero.\n%s",
 		       cell.attr.filename,
-		       cell_make_str(&cell, TRUE, cell_str_buf));
+		       cell_make_json(&cell, TRUE, cell_str_buf));
 		free(cell_str_buf);
 
 		/* 死 */
@@ -614,6 +624,8 @@ void cell_do_cycle(char *filename)
 		/* ファイルへセーブ */
 		cell_save_to_file(&cell, TRUE);
 	}
+
+	syslog(LOG_DEBUG, "%s: e", __FUNCTION__);
 }
 
 /* 関数を実行した場合TRUEを、しなかった場合FALSEを返す */
@@ -729,78 +741,103 @@ void cell_dump(struct cell *cell, bool_t is_verbose)
 	printf("\n");
 }
 
-char *cell_make_str(struct cell *cell, bool_t is_verbose, char *buf)
+char *cell_make_json(struct cell *cell, bool_t is_verbose, char *buf)
 {
 	unsigned int i, j;
 	char *buf_p = buf;
 
-	buf_p += sprintf(buf_p, "[Attributes]\n");
-	buf_p += sprintf(buf_p, "- life_duration\t: %d\n",
+	buf_p += sprintf(buf_p, "{\n");
+	buf_p += sprintf(buf_p, "  \"attr\": {\n");
+	buf_p += sprintf(buf_p, "    \"life_duration\": %d,\n",
 			 cell->attr.life_duration);
-	buf_p += sprintf(buf_p, "- life_left\t: %d\n", cell->attr.life_left);
-	buf_p += sprintf(buf_p, "- fitness\t: %d\n", cell->attr.fitness);
-	buf_p += sprintf(buf_p, "- num_args\t: %d\n", cell->attr.num_args);
-	buf_p += sprintf(buf_p, "- has_args\t: %d\n", cell->attr.has_args);
-	buf_p += sprintf(buf_p, "- has_retval\t: %d\n", cell->attr.has_retval);
-	buf_p += sprintf(buf_p, "- func_size\t: %d\n", cell->attr.func_size);
-	buf_p += sprintf(buf_p, "- args_buf\t:\n");
+	buf_p += sprintf(buf_p, "    \"life_left\": %d,\n",
+			 cell->attr.life_left);
+	buf_p += sprintf(buf_p, "    \"fitness\": %d,\n", cell->attr.fitness);
+	buf_p += sprintf(buf_p, "    \"num_args\": %d,\n", cell->attr.num_args);
+	buf_p += sprintf(buf_p, "    \"has_args\": %d,\n", cell->attr.has_args);
+	buf_p += sprintf(buf_p, "    \"has_retval\": %d,\n",
+			 cell->attr.has_retval);
+	buf_p += sprintf(buf_p, "    \"func_size\": %d,\n",
+			 cell->attr.func_size);
+	buf_p += sprintf(buf_p, "    \"args_buf\": [\n");
 	for (i = 0; i < CELL_MAX_ARGS; i++) {
-		buf_p += sprintf(buf_p, "  [%d] 0x%016llx\n",
-				 i, cell->attr.args_buf[i]);
+		buf_p += sprintf(buf_p, "      %lld", cell->attr.args_buf[i]);
+		if ((i + 1) < CELL_MAX_ARGS)
+			*buf_p++ = ',';
+		*buf_p++ = '\n';
 	}
-	buf_p += sprintf(buf_p, "- num_codns\t: %lld\n", cell->attr.num_codns);
+	buf_p += sprintf(buf_p, "    ],\n");
+	buf_p += sprintf(buf_p, "    \"num_codns\": %lld\n",
+			 cell->attr.num_codns);
+	buf_p += sprintf(buf_p, "  },\n");
 
-	buf_p += sprintf(buf_p, "\n");
-
-	buf_p += sprintf(buf_p, "[DNA]\n");
+	buf_p += sprintf(buf_p, "  \"codn_list\": ");
 	if (cell->codn_list == NULL)
-		buf_p += sprintf(buf_p, "- codn_list\t: NULL\n");
+		buf_p += sprintf(buf_p, "null,\n");
 	else {
+		buf_p += sprintf(buf_p, "[\n");
 		for (i = 0; i < cell->attr.num_codns; i++) {
-			buf_p += sprintf(buf_p, "- codn_list[%d]\t:\n", i);
-			buf_p += sprintf(buf_p, "  .len\t = %d\n",
+			buf_p += sprintf(buf_p, "    {\n");
+			buf_p += sprintf(buf_p, "      \"len\": %d,\n",
 					 cell->codn_list[i].len);
-			buf_p += sprintf(buf_p, "  .is_buffered\t = %d\n",
+			buf_p += sprintf(buf_p, "      \"is_buffered\": %d,\n",
 			       cell->codn_list[i].is_buffered);
 			if (is_verbose == TRUE) {
-				buf_p += sprintf(buf_p, "  ._rsv\t = 0x%04x\n",
+				buf_p += sprintf(buf_p, "      \"_rsv\": %d,\n",
 						 cell->codn_list[i]._rsv);
-				buf_p += sprintf(buf_p, "  ._rsv2\t = 0x%08x\n",
+				buf_p += sprintf(buf_p,
+						 "      \"_rsv2\": %d,\n",
 						 cell->codn_list[i]._rsv2);
 				buf_p += sprintf(
-					buf_p, "  .int64\t = 0x%016llx\n",
+					buf_p, "      \"int64\": %lld,\n",
 					cell->codn_list[i].int64);
-				buf_p += sprintf(buf_p, "  .byte\t = 0x");
-				for (j = 0; j < 8; j++) {
+				buf_p += sprintf(buf_p, "      \"byte\": [");
+				for (j = 0; j < MAX_COMPOUND_ELEMENTS; j++) {
 					buf_p += sprintf(
-						buf_p, " %02x",
+						buf_p, " %d",
 						cell->codn_list[i].byte[j]);
+					if ((j + 1) < MAX_COMPOUND_ELEMENTS)
+						*buf_p++ = ',';
+					else
+						*buf_p++ = ' ';
 				}
 			} else {
-				buf_p += sprintf(buf_p, "  .byte\t = 0x");
+				buf_p += sprintf(buf_p, "      \"byte\": [");
 				for (j = 0; j < cell->codn_list[i].len; j++) {
 					buf_p += sprintf(
-						buf_p, " %02x",
+						buf_p, " %d",
 						cell->codn_list[i].byte[j]);
+					if ((j + 1) < cell->codn_list[i].len)
+						*buf_p++ = ',';
+					else
+						*buf_p++ = ' ';
 				}
 			}
-			buf_p += sprintf(buf_p, "\n");
+			buf_p += sprintf(buf_p, "]\n");
+			if ((i + 1) < cell->attr.num_codns)
+				buf_p += sprintf(buf_p, "    },\n");
+			else
+				buf_p += sprintf(buf_p, "    }\n");
 		}
+		buf_p += sprintf(buf_p, "  ],\n");
 	}
 
-	buf_p += sprintf(buf_p, "\n");
-
-	buf_p += sprintf(buf_p, "[Protein]\n");
+	buf_p += sprintf(buf_p, "  \"func\": ");
 	if (cell->func == NULL)
-		buf_p += sprintf(buf_p, "- func\t: NULL\n");
+		buf_p += sprintf(buf_p, "null\n");
 	else {
-		buf_p += sprintf(buf_p, "- func\t: 0x\n");
-		buf_p += sprintf(buf_p, " ");
+		buf_p += sprintf(buf_p, "[\n");
+		buf_p += sprintf(buf_p, "   ");
 		unsigned char *p = (unsigned char *)cell->func;
-		for (i = 0; i < cell->attr.func_size; i++)
-			buf_p += sprintf(buf_p, " %02x", p[i]);
+		for (i = 0; i < cell->attr.func_size; i++) {
+			buf_p += sprintf(buf_p, " %d", p[i]);
+			if ((i + 1) < cell->attr.func_size)
+				*buf_p++ = ',';
+		}
+		*buf_p++ = '\n';
+		buf_p += sprintf(buf_p, "  ]\n");
 	}
-	buf_p += sprintf(buf_p, "\n");
+	buf_p += sprintf(buf_p, "}\n");
 
 	return buf;
 }

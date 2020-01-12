@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <syslog.h>
+#include <unistd.h>
 
 #include "compound.h"
 #include "common.h"
@@ -23,13 +25,21 @@ FILE *comp_open_file(const char *dirname, const char *filename,
 void comp_load_from_file(
 	const char *dirname, char *filename, struct compound *comp)
 {
+	syslog(LOG_DEBUG, "%s: a %s", __FUNCTION__, filename);
+
 	FILE *load_fp = comp_open_file(dirname, filename, "rb");
 	ASSERT(load_fp != NULL);
+
+	syslog(LOG_DEBUG, "%s: b", __FUNCTION__);
 
 	size_t read_bytes = fread_safe(comp, sizeof(struct compound), load_fp);
 	ASSERT(read_bytes == sizeof(struct compound));
 
+	syslog(LOG_DEBUG, "%s: c", __FUNCTION__);
+
 	fclose(load_fp);
+
+	syslog(LOG_DEBUG, "%s: d", __FUNCTION__);
 }
 
 void comp_save_to_file(char *dirname, char *filename, struct compound *comp)
@@ -40,6 +50,10 @@ void comp_save_to_file(char *dirname, char *filename, struct compound *comp)
 	size_t write_bytes = fwrite_safe(comp, sizeof(struct compound), save_fp);
 	ASSERT(write_bytes == sizeof(struct compound));
 
+	int fd = fileno(save_fp);
+	ASSERT(fd != -1);
+	int _res = fsync(fd);
+	ASSERT(_res != -1);
 	fclose(save_fp);
 }
 

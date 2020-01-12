@@ -14,7 +14,8 @@ create-incr-cell-data: create-incr-cell-data.c $(COMMON_SRCS)
 create-exit-cell: create-exit-cell.c $(COMMON_SRCS)
 	gcc $(CFLAGS) -o $@ $+
 
-setup: $(TARGETS) create-init-codes dsy-name dsy-eval-init dsy-eval-incr
+setup: $(TARGETS) create-init-codes dsy-name dsy-eval-init		\
+	dsy-eval-incr cell-fitness-logger dsy-log2hist dsy-show-hists
 	mkdir -p $(WORK_DIR)/samples
 	cp $+ $(WORK_DIR)/samples/
 

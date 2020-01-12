@@ -1,0 +1,21 @@
+#!/bin/sh
+
+mkdir -p log
+
+dump_fitness_list() {
+	for c in $(ls cell); do
+		echo -n "${c} "
+		bin/dsy-dump-cell -j ${c} | jq -r .attr.fitness
+	done | sort -k2 -nr
+}
+
+if [ $# -eq 1 ]; then
+	wait_sec=$1
+else
+	wait_sec=600
+fi
+
+while :; do
+	dump_fitness_list >log/cell_fitness_$(date '+%Y%m%d%H%M%S').log
+	sleep ${wait_sec}
+done

@@ -36,7 +36,17 @@ struct __attribute__((packed)) cell_attributes {
 struct __attribute__((packed)) codon {
 	unsigned char len;
 	bool_t is_buffered;
-	unsigned short _rsv;
+	union {
+		struct {
+			bool_t insp_dis: 1;
+			bool_t insn_dis: 1;
+			bool_t mod_dis: 1;
+			bool_t rem_dis: 1;
+			unsigned char _mf_rsv: 4;
+		};
+		unsigned char int8;
+	} mutate_flg;
+	unsigned char _rsv;
 	unsigned int _rsv2;
 	union {
 		unsigned long long int64;

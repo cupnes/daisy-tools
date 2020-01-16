@@ -140,10 +140,12 @@ static struct codon *copy_codon_list(struct cell *cell)
 		malloc(sizeof(struct codon) * cell->attr.num_codns);
 	ASSERT(codn_new_list != NULL);
 
-	unsigned int i;
+	unsigned long long i;
 	for (i = 0; i < cell->attr.num_codns; i++) {
 		codn_new_list[i].len = cell->codn_list[i].len;
 		codn_new_list[i].is_buffered = FALSE;
+		codn_new_list[i].mutate_flg.int8 =
+			cell->codn_list[i].mutate_flg.int8;
 		codn_new_list[i]._rsv = codn_new_list[i]._rsv2 = 0;
 		codn_new_list[i].int64 = cell->codn_list[i].int64;
 	}
@@ -185,177 +187,331 @@ static void _mutation_log(
 	free(codn_new_list_str);
 }
 
-/* ランダムに選出した命令をidxの位置に追加する
- * (元々idxの位置にあった命令は追加した命令の下に続くようにする) */
-static void _mutation_insert(
-	struct cell *cell, struct cell *cell_new, unsigned int idx)
+/* ランダムに選んだ命令をランダムに選んだコドンの直前に挿入する */
+static bool_t _mutation_insert_prev(struct cell *cell, struct cell *cell_new)
 {
-	cell_new->attr.num_codns += 1;
+	syslog(LOG_DEBUG, "cell[%s,new]: enter INSERT_PREV mutation.",
+	       cell->attr.filename);
 
+	/* どのコドンを対象にするか決める */
+	unsigned long long idx = rand() % cell->attr.num_codns;
+	syslog(LOG_DEBUG, "cell[%s,new]: index is %lld.",
+	       cell->attr.filename, idx);
+
+	/* 選んだコドンがこの操作を許可していなければFALSEを返す */
+	if (cell->codn_list[idx].mutate_flg.insp_dis == TRUE) {
+		syslog(LOG_DEBUG,
+		       "cell[%s,new]: codon%lld doesn't allow"
+		       " INSERT_PREV mutation.", cell->attr.filename, idx);
+		return FALSE;
+	}
+
+	syslog(LOG_DEBUG, "cell[%s,new]: do INSERT_PREV mutation.",
+	       cell->attr.filename);
+
+	/* 新DNA(コドンリスト)をアロケート */
+	cell_new->attr.num_codns++;
 	cell_new->codn_list =
 		malloc(sizeof(struct codon) * cell_new->attr.num_codns);
 	ASSERT(cell_new->codn_list != NULL);
 
-	unsigned int i;
+	unsigned long long i;
 
+	/* 対象コドンの直前までを元コドンからコピー */
 	for (i = 0; i < idx; i++) {
 		cell_new->codn_list[i].len = cell->codn_list[i].len;
 		cell_new->codn_list[i].is_buffered = FALSE;
+		cell_new->codn_list[i].mutate_flg.int8 =
+			cell->codn_list[i].mutate_flg.int8;
 		cell_new->codn_list[i]._rsv = 0;
 		cell_new->codn_list[i]._rsv2 = 0;
 		cell_new->codn_list[i].int64 = cell->codn_list[i].int64;
 	}
 
+	/* 突然変異したコドンを取得 */
 	struct codon mutated;
 	sysenv_get_mutated_codon(&mutated);
 	char codn_str[MAX_COMPOUND_ELEMENTS * 3];
-	syslog(LOG_DEBUG, "cell[%s,new]: mutated codn(insert) is [%s](%d).",
+	syslog(LOG_DEBUG,
+	       "cell[%s,new]: mutated codn(INSERT_PREV) is [%s](%d).",
 	       cell->attr.filename, codn_make_str(&mutated, codn_str),
 	       mutated.len);
 
+	/* 突然変異したコドンを挿入 */
 	cell_new->codn_list[idx].len = mutated.len;
 	cell_new->codn_list[idx].is_buffered = FALSE;
+	cell_new->codn_list[idx].mutate_flg.int8 = 0;
 	cell_new->codn_list[idx]._rsv = 0;
 	cell_new->codn_list[idx]._rsv2 = 0;
 	cell_new->codn_list[idx].int64 = mutated.int64;
 
+	/* 対象コドン以降を挿入位置の直後にコピー */
 	for (i = idx; i < cell->attr.num_codns; i++) {
 		cell_new->codn_list[i + 1].len = cell->codn_list[i].len;
 		cell_new->codn_list[i + 1].is_buffered = FALSE;
+		cell_new->codn_list[i + 1].mutate_flg.int8 =
+			cell->codn_list[i].mutate_flg.int8;
 		cell_new->codn_list[i + 1]._rsv = 0;
 		cell_new->codn_list[i + 1]._rsv2 = 0;
 		cell_new->codn_list[i + 1].int64 = cell->codn_list[i].int64;
 	}
 
-	_mutation_log(cell, cell_new, "insert");
+	_mutation_log(cell, cell_new, "INSERT_PREV");
+
+	return TRUE;
 }
 
-/* idxの位置の命令をランダムに選出した命令へ変更する */
-static void _mutation_modify(
-	struct cell *cell, struct cell *cell_new, unsigned int idx)
+/* ランダムに選んだ命令をランダムに選んだコドンの直後に挿入する */
+static bool_t _mutation_insert_next(struct cell *cell, struct cell *cell_new)
 {
+	syslog(LOG_DEBUG, "cell[%s,new]: enter INSERT_NEXT mutation.",
+	       cell->attr.filename);
+
+	/* どのコドンを対象にするか決める */
+	unsigned long long idx = rand() % cell->attr.num_codns;
+	syslog(LOG_DEBUG, "cell[%s,new]: index is %lld.",
+	       cell->attr.filename, idx);
+
+	/* 選んだコドンがこの操作を許可していなければFALSEを返す */
+	if (cell->codn_list[idx].mutate_flg.insn_dis == TRUE) {
+		syslog(LOG_DEBUG,
+		       "cell[%s,new]: codon%lld doesn't allow"
+		       " INSERT_NEXT mutation.", cell->attr.filename, idx);
+		return FALSE;
+	}
+
+	syslog(LOG_DEBUG, "cell[%s,new]: do INSERT_NEXT mutation.",
+	       cell->attr.filename);
+
+	/* 新DNA(コドンリスト)をアロケート */
+	cell_new->attr.num_codns++;
 	cell_new->codn_list =
 		malloc(sizeof(struct codon) * cell_new->attr.num_codns);
 	ASSERT(cell_new->codn_list != NULL);
 
-	unsigned int i;
+	unsigned long long i;
 
-	for (i = 0; i < cell_new->attr.num_codns; i++) {
+	/* 対象コドンまでを元コドンからコピー */
+	for (i = 0; i <= idx; i++) {
 		cell_new->codn_list[i].len = cell->codn_list[i].len;
 		cell_new->codn_list[i].is_buffered = FALSE;
+		cell_new->codn_list[i].mutate_flg.int8 =
+			cell->codn_list[i].mutate_flg.int8;
 		cell_new->codn_list[i]._rsv = 0;
 		cell_new->codn_list[i]._rsv2 = 0;
 		cell_new->codn_list[i].int64 = cell->codn_list[i].int64;
 	}
 
+	/* 突然変異したコドンを取得 */
 	struct codon mutated;
 	sysenv_get_mutated_codon(&mutated);
 	char codn_str[MAX_COMPOUND_ELEMENTS * 3];
-	syslog(LOG_DEBUG, "cell[%s,new]: mutated codn(modify) is [%s](%d).",
+	syslog(LOG_DEBUG,
+	       "cell[%s,new]: mutated codn(INSERT_NEXT) is [%s](%d).",
 	       cell->attr.filename, codn_make_str(&mutated, codn_str),
 	       mutated.len);
 
-	cell_new->codn_list[idx].len = mutated.len;
-	cell_new->codn_list[idx].int64 = mutated.int64;
+	/* 突然変異したコドンを挿入 */
+	cell_new->codn_list[idx + 1].len = mutated.len;
+	cell_new->codn_list[idx + 1].is_buffered = FALSE;
+	cell_new->codn_list[idx + 1].mutate_flg.int8 = 0;
+	cell_new->codn_list[idx + 1]._rsv = 0;
+	cell_new->codn_list[idx + 1]._rsv2 = 0;
+	cell_new->codn_list[idx + 1].int64 = mutated.int64;
 
-	_mutation_log(cell, cell_new, "modify");
+	/* 対象コドン以降を挿入位置の直後にコピー */
+	for (i = idx + 1; i < cell->attr.num_codns; i++) {
+		cell_new->codn_list[i + 1].len = cell->codn_list[i].len;
+		cell_new->codn_list[i + 1].is_buffered = FALSE;
+		cell_new->codn_list[i + 1].mutate_flg.int8 =
+			cell->codn_list[i].mutate_flg.int8;
+		cell_new->codn_list[i + 1]._rsv = 0;
+		cell_new->codn_list[i + 1]._rsv2 = 0;
+		cell_new->codn_list[i + 1].int64 = cell->codn_list[i].int64;
+	}
+
+	_mutation_log(cell, cell_new, "INSERT_NEXT");
+
+	return TRUE;
 }
 
-/* idxの位置の命令を削除する */
-static void _mutation_remove(
-	struct cell *cell, struct cell *cell_new, unsigned int idx)
+/* ランダムに選んだコドンをランダムに選んだ命令へ変更する */
+static bool_t _mutation_modify(struct cell *cell, struct cell *cell_new)
 {
-	cell_new->attr.num_codns -= 1;
+	syslog(LOG_DEBUG, "cell[%s,new]: enter MODIFY mutation.",
+	       cell->attr.filename);
 
+	/* どのコドンを対象にするか決める */
+	unsigned long long idx = rand() % cell->attr.num_codns;
+	syslog(LOG_DEBUG, "cell[%s,new]: index is %lld.",
+	       cell->attr.filename, idx);
+
+	/* 選んだコドンがこの操作を許可していなければFALSEを返す */
+	if (cell->codn_list[idx].mutate_flg.mod_dis == TRUE) {
+		syslog(LOG_DEBUG,
+		       "cell[%s,new]: codon%lld doesn't allow"
+		       " MODIFY mutation.", cell->attr.filename, idx);
+		return FALSE;
+	}
+
+	syslog(LOG_DEBUG, "cell[%s,new]: do MODIFY mutation.",
+	       cell->attr.filename);
+
+	/* 新DNA(コドンリスト)をアロケート */
 	cell_new->codn_list =
 		malloc(sizeof(struct codon) * cell_new->attr.num_codns);
 	ASSERT(cell_new->codn_list != NULL);
 
-	unsigned int i;
+	unsigned long long i;
 
-	for (i = 0; i < idx; i++) {
+	/* 元細胞のコドンを全て新細胞へコピー */
+	for (i = 0; i < cell->attr.num_codns; i++) {
 		cell_new->codn_list[i].len = cell->codn_list[i].len;
 		cell_new->codn_list[i].is_buffered = FALSE;
+		cell_new->codn_list[i].mutate_flg.int8 =
+			cell->codn_list[i].mutate_flg.int8;
 		cell_new->codn_list[i]._rsv = 0;
 		cell_new->codn_list[i]._rsv2 = 0;
 		cell_new->codn_list[i].int64 = cell->codn_list[i].int64;
 	}
 
+	/* 突然変異したコドンを取得 */
+	struct codon mutated;
+	sysenv_get_mutated_codon(&mutated);
+	char codn_str[MAX_COMPOUND_ELEMENTS * 3];
+	syslog(LOG_DEBUG,
+	       "cell[%s,new]: mutated codn(INSERT_NEXT) is [%s](%d).",
+	       cell->attr.filename, codn_make_str(&mutated, codn_str),
+	       mutated.len);
+
+	/* 新細胞の対象コドンの位置のコドンを突然変異したコドンで上書き */
+	cell_new->codn_list[idx].len = mutated.len;
+	cell_new->codn_list[idx].mutate_flg.int8 = 0;
+	cell_new->codn_list[idx].int64 = mutated.int64;
+
+	_mutation_log(cell, cell_new, "MODIFY");
+
+	return TRUE;
+}
+
+/* ランダムに選んだコドンを削除する */
+static bool_t _mutation_remove(struct cell *cell, struct cell *cell_new)
+{
+	syslog(LOG_DEBUG, "cell[%s,new]: enter REMOVE mutation.",
+	       cell->attr.filename);
+
+	/* どのコドンを対象にするか決める */
+	unsigned long long idx = rand() % cell->attr.num_codns;
+	syslog(LOG_DEBUG, "cell[%s,new]: index is %lld.",
+	       cell->attr.filename, idx);
+
+	/* 選んだコドンがこの操作を許可していなければFALSEを返す */
+	if (cell->codn_list[idx].mutate_flg.rem_dis == TRUE) {
+		syslog(LOG_DEBUG,
+		       "cell[%s,new]: codon%lld doesn't allow"
+		       " REMOVE mutation.", cell->attr.filename, idx);
+		return FALSE;
+	}
+
+	syslog(LOG_DEBUG, "cell[%s,new]: do REMOVE mutation.",
+	       cell->attr.filename);
+
+	/* 新DNA(コドンリスト)をアロケート */
+	cell_new->attr.num_codns--;
+	cell_new->codn_list =
+		malloc(sizeof(struct codon) * cell_new->attr.num_codns);
+	ASSERT(cell_new->codn_list != NULL);
+
+	unsigned long long i;
+
+	/* 対象コドンまでを元コドンから新コドンへコピー */
+	for (i = 0; i < idx; i++) {
+		cell_new->codn_list[i].len = cell->codn_list[i].len;
+		cell_new->codn_list[i].is_buffered = FALSE;
+		cell_new->codn_list[i].mutate_flg.int8 =
+			cell->codn_list[i].mutate_flg.int8;
+		cell_new->codn_list[i]._rsv = 0;
+		cell_new->codn_list[i]._rsv2 = 0;
+		cell_new->codn_list[i].int64 = cell->codn_list[i].int64;
+	}
+
+	/* 対象コドンをsyslogへ出力 */
 	char codn_str[MAX_COMPOUND_ELEMENTS * 3];
 	syslog(LOG_DEBUG, "cell[%s,new]: remove codn is [%s](%d).",
 	       cell->attr.filename,
 	       codn_make_str(&cell->codn_list[idx], codn_str),
 	       cell->codn_list[idx].len);
 
+	/* 対象コドン直後のコドンを新コドンへコピー */
 	for (i = idx; i < cell_new->attr.num_codns; i++) {
 		cell_new->codn_list[i].len = cell->codn_list[i + 1].len;
 		cell_new->codn_list[i].is_buffered = FALSE;
+		cell_new->codn_list[i].mutate_flg.int8 =
+			cell->codn_list[i + 1].mutate_flg.int8;
 		cell_new->codn_list[i]._rsv = 0;
 		cell_new->codn_list[i]._rsv2 = 0;
 		cell_new->codn_list[i].int64 = cell->codn_list[i + 1].int64;
 	}
 
-	_mutation_log(cell, cell_new, "remove");
+	_mutation_log(cell, cell_new, "REMOVE");
+
+	return TRUE;
 }
 
-static void mutation(struct cell *cell, struct cell *cell_new)
+static bool_t mutation(struct cell *cell, struct cell *cell_new)
 {
+	/* 突然変異の種類 */
 	enum mutate_action {
-		INSERT,
+		INSERT_PREV,
+		INSERT_NEXT,
 		MODIFY,
 		REMOVE,
 		MAX_MUTATE_ACTION
 	};
 
-	/* 方針: 末尾のret命令自身は触らない */
-
-	if (cell_new->attr.num_codns >= 2) {
-		syslog(LOG_DEBUG,
-		       "cell[%s,new]: has code(s)(%lld) other than ret instruction.",
-		       cell->attr.filename, cell_new->attr.num_codns);
-
-		/* ret命令以外の命令が1つ以上ある
-		 * (追加/変更/削除が可能) */
-		unsigned int idx;
-		switch (rand() % MAX_MUTATE_ACTION) {
-		case INSERT:
-			idx = rand() % cell_new->attr.num_codns;
-			syslog(LOG_DEBUG, "cell[%s,new]: mutate action is insert."
-			       " (idx=%d)", cell->attr.filename, idx);
-			_mutation_insert(cell, cell_new, idx + 1);
-			break;
-
-		case MODIFY:
-			if (cell_new->attr.num_codns > 2)
-				idx = rand() % (cell_new->attr.num_codns - 1);
-			else
-				idx = 0;
-			syslog(LOG_DEBUG, "cell[%s,new]: mutate action is modify."
-			       " (idx=%d)", cell->attr.filename, idx);
-			_mutation_modify(cell, cell_new, idx);
-			break;
-
-		case REMOVE:
-			if (cell_new->attr.num_codns > 2)
-				idx = rand() % (cell_new->attr.num_codns - 1);
-			else
-				idx = 0;
-			syslog(LOG_DEBUG, "cell[%s,new]: mutate action is remove."
-			       " (idx=%d)", cell->attr.filename, idx);
-			_mutation_remove(cell, cell_new, idx);
-			break;
-		}
-	} else {
-		syslog(LOG_DEBUG,
-		       "cell[%s,new]: has only ret instruction(num_codns=%lld).",
-		       cell->attr.filename, cell_new->attr.num_codns);
-
-		/* ret命令のみの状態
-		 * (追加のみ可能) */
-
-		/* ランダムに選出した命令をretの前に追加する */
-		_mutation_insert(cell, cell_new, 0);
+	bool_t do_mutate = (rand() % 100) < CELL_MUTATION_PROBABILITY;
+	if (do_mutate == FALSE) {
+		syslog(LOG_DEBUG, "cell[%s,new]: didn't mutate."
+		       "(no possibility of mutation)", cell->attr.filename);
+		return FALSE;
 	}
+	syslog(LOG_DEBUG, "cell[%s,new]: do mutate.", cell->attr.filename);
+
+	/* 突然変異の種類を決める */
+	unsigned char act = rand() % MAX_MUTATE_ACTION;
+	syslog(LOG_DEBUG, "cell[%s,new]: act number is %d.",
+	       cell->attr.filename, act);
+
+	/* 突然変異の種類別に専用の関数を呼び出す */
+	bool_t is_mutated = FALSE;
+	switch (act) {
+	case INSERT_PREV:
+		is_mutated = _mutation_insert_prev(cell, cell_new);
+		break;
+
+	case INSERT_NEXT:
+		is_mutated = _mutation_insert_next(cell, cell_new);
+		break;
+
+	case MODIFY:
+		is_mutated = _mutation_modify(cell, cell_new);
+		break;
+
+	case REMOVE:
+		is_mutated = _mutation_remove(cell, cell_new);
+		break;
+	}
+
+	if (is_mutated == FALSE) {
+		syslog(LOG_DEBUG,
+		       "cell[%s,new]: No mutation action was performed.",
+		       cell->attr.filename);
+		return FALSE;
+	}
+
+	syslog(LOG_DEBUG, "cell[%s,new]: mutation action was performed.",
+	       cell->attr.filename);
+	return TRUE;
 }
 
 static void division(struct cell *cell)
@@ -378,14 +534,11 @@ static void division(struct cell *cell)
 	cell_new.attr.num_codns = cell->attr.num_codns;
 	cell_new.attr.filename[0] = '\0';
 
-	/* DNAを複製(ある確率で新細胞のDNAに突然変異を起こす) */
-	bool_t do_mutate = (rand() % 100) < CELL_MUTATION_PROBABILITY;
-	if (do_mutate) {
-		/* 突然変異するなら突然変異しながらDNAを複製する */
-		syslog(LOG_DEBUG, "cell[%s]: mutation.", cell->attr.filename);
-		mutation(cell, &cell_new);
-	} else {
-		/* 突然変異しないならDNAの複製のみ行う */
+	/* 突然変異しながらのDNA複製を試みる
+	 * (突然変異するか否かもこの関数内で決まる) */
+	bool_t is_mutated = mutation(cell, &cell_new);
+	if (is_mutated == FALSE) {
+		/* 突然変異しなかった場合、DNA複製のみを行う */
 		cell_new.codn_list = copy_codon_list(cell);
 		syslog(LOG_DEBUG,
 		       "cell[%s]: new cell's codons were created. (copy)",
@@ -395,6 +548,7 @@ static void division(struct cell *cell)
 	/* 現細胞のDNAから生成したタンパク質リストを新細胞へ繋ぐ */
 	central_dogma(cell, &cell_new);
 
+	/* 新細胞の内容をJSON形式でsyslogにダンプ */
 	char *cell_str_buf = malloc(CELL_STR_BUF_SIZE);
 	ASSERT(cell_str_buf != NULL);
 	syslog(LOG_INFO,
@@ -685,7 +839,8 @@ void cell_dump(struct cell *cell, bool_t is_verbose)
 	printf("- fitness\t: %d\n", cell->attr.fitness);
 	printf("- num_args\t: %d\n", cell->attr.num_args);
 	printf("- has_args\t: %d\n", cell->attr.has_args);
-	printf("- has_retval\t: %d\n", cell->attr.has_retval);
+	printf("- has_retval\t: %s\n",
+	       cell->attr.has_retval == TRUE ? "true" : "false");
 	printf("- func_size\t: %d\n", cell->attr.func_size);
 	printf("- args_buf\t:\n");
 	for (i = 0; i < CELL_MAX_ARGS; i++)
@@ -701,8 +856,28 @@ void cell_dump(struct cell *cell, bool_t is_verbose)
 		for (i = 0; i < cell->attr.num_codns; i++) {
 			printf("- codn_list[%d]\t:\n", i);
 			printf("  .len\t = %d\n", cell->codn_list[i].len);
-			printf("  .is_buffered\t = %d\n",
-			       cell->codn_list[i].is_buffered);
+			printf("  .is_buffered\t = %s\n",
+			       cell->codn_list[i].is_buffered == TRUE ?
+			       "true" : "false");
+			printf("  .mutate_flg\t:\n");
+			printf("    .insp_dis\t = %s\n",
+				cell->codn_list[i].mutate_flg.insp_dis == TRUE ?
+				"true" : "false");
+			printf("    .insn_dis\t = %s\n",
+				cell->codn_list[i].mutate_flg.insn_dis == TRUE ?
+				"true" : "false");
+			printf("    .mod_dis\t = %s\n",
+				cell->codn_list[i].mutate_flg.mod_dis == TRUE ?
+				"true" : "false");
+			printf("    .rem_dis\t = %s\n",
+				cell->codn_list[i].mutate_flg.rem_dis == TRUE ?
+				"true" : "false");
+			if (is_verbose == TRUE) {
+				printf("    ._mf_rsv\t = 0x%1x\n",
+				       cell->codn_list[i].mutate_flg._mf_rsv);
+			}
+			printf("    .int8\t = 0x%02x\n",
+				cell->codn_list[i].mutate_flg.int8);
 			if (is_verbose == TRUE) {
 				printf("  ._rsv\t = 0x%04x\n",
 				       cell->codn_list[i]._rsv);
@@ -755,8 +930,8 @@ char *cell_make_json(struct cell *cell, bool_t is_verbose, char *buf)
 	buf_p += sprintf(buf_p, "    \"fitness\": %d,\n", cell->attr.fitness);
 	buf_p += sprintf(buf_p, "    \"num_args\": %d,\n", cell->attr.num_args);
 	buf_p += sprintf(buf_p, "    \"has_args\": %d,\n", cell->attr.has_args);
-	buf_p += sprintf(buf_p, "    \"has_retval\": %d,\n",
-			 cell->attr.has_retval);
+	buf_p += sprintf(buf_p, "    \"has_retval\": %s,\n",
+			 cell->attr.has_retval == TRUE ? "true" : "false");
 	buf_p += sprintf(buf_p, "    \"func_size\": %d,\n",
 			 cell->attr.func_size);
 	buf_p += sprintf(buf_p, "    \"args_buf\": [\n");
@@ -780,8 +955,36 @@ char *cell_make_json(struct cell *cell, bool_t is_verbose, char *buf)
 			buf_p += sprintf(buf_p, "    {\n");
 			buf_p += sprintf(buf_p, "      \"len\": %d,\n",
 					 cell->codn_list[i].len);
-			buf_p += sprintf(buf_p, "      \"is_buffered\": %d,\n",
-			       cell->codn_list[i].is_buffered);
+			buf_p += sprintf(
+				buf_p, "      \"is_buffered\": %s,\n",
+				cell->codn_list[i].is_buffered == TRUE ?
+				"true" : "false");
+			buf_p += sprintf(buf_p, "      \"mutate_flg\": {");
+			buf_p += sprintf(
+				buf_p, "        \"insp_dis\": %s,\n",
+				cell->codn_list[i].mutate_flg.insp_dis == TRUE ?
+				"true" : "false");
+			buf_p += sprintf(
+				buf_p, "        \"insn_dis\": %s,\n",
+				cell->codn_list[i].mutate_flg.insn_dis == TRUE ?
+				"true" : "false");
+			buf_p += sprintf(
+				buf_p, "        \"mod_dis\": %s,\n",
+				cell->codn_list[i].mutate_flg.mod_dis == TRUE ?
+				"true" : "false");
+			buf_p += sprintf(
+				buf_p, "        \"rem_dis\": %s,\n",
+				cell->codn_list[i].mutate_flg.rem_dis == TRUE ?
+				"true" : "false");
+			if (is_verbose == TRUE) {
+				buf_p += sprintf(
+					buf_p, "        \"_mf_rsv\": %d,\n",
+					cell->codn_list[i].mutate_flg._mf_rsv);
+			}
+			buf_p += sprintf(
+				buf_p, "        \"int8\": %d,\n",
+				cell->codn_list[i].mutate_flg.int8);
+			buf_p += sprintf(buf_p, "      },\n");
 			if (is_verbose == TRUE) {
 				buf_p += sprintf(buf_p, "      \"_rsv\": %d,\n",
 						 cell->codn_list[i]._rsv);

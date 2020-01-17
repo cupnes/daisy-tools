@@ -17,6 +17,10 @@ struct codon init_codn[INIT_NUM_CODON] = {
 	{
 		.len = 1,
 		.is_buffered = FALSE,
+		.mutate_flg.insp_dis = FALSE,
+		.mutate_flg.insn_dis = TRUE,
+		.mutate_flg.mod_dis = TRUE,
+		.mutate_flg.rem_dis = TRUE,
 		.byte = {0xc3}
 	}
 };

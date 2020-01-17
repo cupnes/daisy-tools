@@ -7,10 +7,10 @@ fi
 
 log=$1
 for f in $(seq 0 10 100); do
-  printf "%3d " ${f}
-  n=$(grep -E " ${f}$" ${log} | wc -l)
-  for i in $(seq ${n}); do
-    echo -n '*'
-  done
-  echo
+	printf "%3d " ${f}
+	n=$(grep -E " ${f}$" ${log} | wc -l)
+	for i in $(seq ${n}); do
+		echo -n '*'
+	done
+	echo
 done

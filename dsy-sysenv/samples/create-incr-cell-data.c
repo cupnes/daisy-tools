@@ -19,16 +19,28 @@ struct codon incr_codn[INCR_NUM_CODON] = {
 	{
 		.len = 3,
 		.is_buffered = FALSE,
+		.mutate_flg.insp_dis = FALSE,
+		.mutate_flg.insn_dis = TRUE,
+		.mutate_flg.mod_dis = TRUE,
+		.mutate_flg.rem_dis = TRUE,
 		.byte = {0x48, 0x89, 0xf8}
 	},
 	{
 		.len = 3,
 		.is_buffered = FALSE,
+		.mutate_flg.insp_dis = TRUE,
+		.mutate_flg.insn_dis = TRUE,
+		.mutate_flg.mod_dis = TRUE,
+		.mutate_flg.rem_dis = TRUE,
 		.byte = {0x48, 0xff, 0xc0}
 	},
 	{
 		.len = 1,
 		.is_buffered = FALSE,
+		.mutate_flg.insp_dis = TRUE,
+		.mutate_flg.insn_dis = TRUE,
+		.mutate_flg.mod_dis = TRUE,
+		.mutate_flg.rem_dis = TRUE,
 		.byte = {0xc3}
 	}
 };

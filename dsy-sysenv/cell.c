@@ -959,7 +959,7 @@ char *cell_make_json(struct cell *cell, bool_t is_verbose, char *buf)
 				buf_p, "      \"is_buffered\": %s,\n",
 				cell->codn_list[i].is_buffered == TRUE ?
 				"true" : "false");
-			buf_p += sprintf(buf_p, "      \"mutate_flg\": {");
+			buf_p += sprintf(buf_p, "      \"mutate_flg\": {\n");
 			buf_p += sprintf(
 				buf_p, "        \"insp_dis\": %s,\n",
 				cell->codn_list[i].mutate_flg.insp_dis == TRUE ?
@@ -982,7 +982,7 @@ char *cell_make_json(struct cell *cell, bool_t is_verbose, char *buf)
 					cell->codn_list[i].mutate_flg._mf_rsv);
 			}
 			buf_p += sprintf(
-				buf_p, "        \"int8\": %d,\n",
+				buf_p, "        \"int8\": %d\n",
 				cell->codn_list[i].mutate_flg.int8);
 			buf_p += sprintf(buf_p, "      },\n");
 			if (is_verbose == TRUE) {

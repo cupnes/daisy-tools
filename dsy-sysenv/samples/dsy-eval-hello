@@ -1,0 +1,71 @@
+#!/bin/sh
+
+set -uex
+
+TMP_NAME=.test
+
+count_num_codes()
+{
+	asm=$1
+	begin=$(grep -En '^0.* <\.data>:$' ${asm} | cut -d':' -f1)
+	begin=$((begin + 1))
+	sed -n "${begin},\$p" ${asm} | wc -l
+}
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 CELL_FILENAME" 1>&2
+	exit 200
+fi
+
+bin/dsy-cell2elf $1 ${TMP_NAME}.elf
+bin/dsy-elf2asm ${TMP_NAME}.elf ${TMP_NAME}.asm
+
+for n in $(grep -n syscall ${TMP_NAME}.asm | cut -d':' -f1); do
+	if ! sed -n "$((n - 1))p" ${TMP_NAME}.asm | grep -qE 'mov.*,%rax$'; then
+		exit 0
+	fi
+done
+
+chmod +x ${TMP_NAME}.elf
+exit_status=0
+./${TMP_NAME}.elf >${TMP_NAME}.out || exit_status=$?
+
+if [ ${exit_status} -ne 0 ]; then
+	# 終了ステータスが0でないのは何かおかしい
+	# (exitは突然変異させないようにしているはずなので)
+	exit 200
+fi
+
+num_codes=$(count_num_codes ${TMP_NAME}.asm)
+
+if [ ${num_codes} -eq 0 ]; then
+	# num_codes == 0 は何かがおかしい
+	exit 200
+fi
+
+#define HELLO_NUM_CODON	34	/* (+ (* 6 5) 3 1)34 */
+if [ ${num_codes} -le 25 ]; then
+	# 1 <= num_codes <= 25
+	fitness=$((num_codes * 2))
+else
+	# 26 <= num_codes
+	fitness=50
+fi
+
+if grep -q '^Hello' ${TMP_NAME}.out; then
+	fitness=100
+elif grep -q '^Hell' ${TMP_NAME}.out; then
+	fitness=90
+elif grep -q '^Hel' ${TMP_NAME}.out; then
+	fitness=80
+elif grep -q '^He' ${TMP_NAME}.out; then
+	fitness=70
+elif grep -q '^H' ${TMP_NAME}.out; then
+	fitness=60
+fi
+
+if [ ${fitness} -lt 10 ]; then
+	fitness=10
+fi
+
+exit ${fitness}

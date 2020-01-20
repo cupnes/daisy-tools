@@ -54,37 +54,90 @@
 #define FUNC_BUF_SIZE	200	/* (+ (* 34 5) 12 1)183 */
 #define START_ASCII_SPACE	0x00400078
 
-struct codon hello_codn[HELLO_NUM_CODON] = {
-	/* { */
-	/* 	.len = 7, */
-	/* 	.is_buffered = FALSE, */
-	/* 	.byte = {0x48, 0xc7, 0xc7, 0x01, 0x00, 0x00, 0x00} */
-	/* 	/\* mov    $0x1,%rdi *\/ */
-	/* }, */
-	{
-		.len = 3,
-		.is_buffered = FALSE,
-		.byte = {0x48, 0x31, 0xff}
-		/* xor	%rdi,	%rdi */
-	},
-	{
-		.len = 7,
-		.is_buffered = FALSE,
-		.byte = {0x48, 0xc7, 0xc0, 0x3c, 0x00, 0x00, 0x00}
-		/* mov	$60,	%rax */
-	},
-	{
-		.len = 2,
-		.is_buffered = FALSE,
-		.byte = {0x0f, 0x05}
-		/* syscall */
-	},
-	{
-		.len = 1,
-		.is_buffered = FALSE,
-		.byte = {0xc3}
-		/* ret */
+#define NUM_EACH_CODE	100
+#define CODE_FILENAME_LEN	12	/* "hello_NN_MM\0" */
+
+#define DEF_MUTATE_FLG(INSP_DIS, INSN_DIS, MOD_DIS, REM_DIS)	\
+		.mutate_flg.insp_dis = (INSP_DIS),		\
+		.mutate_flg.insn_dis = (INSN_DIS),		\
+		.mutate_flg.mod_dis = (MOD_DIS),		\
+		.mutate_flg.rem_dis = (REM_DIS)
+#define DEF_SYSCALL_WRITE_A_ASCII_CODONS(INSP_DIS, C)			\
+	{								\
+		.len = 7,						\
+		.is_buffered = FALSE,					\
+		DEF_MUTATE_FLG((INSP_DIS), FALSE, FALSE, FALSE),	\
+		.byte = {0x48, 0xc7, 0xc7, 0x01, 0x00, 0x00, 0x00}	\
+	},								\
+	{								\
+		.len = 7,						\
+		.is_buffered = FALSE,					\
+		DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),		\
+		.byte = {0x48, 0xc7, 0xc6, 0x78, 0x00, 0x40, 0x00}	\
+	},								\
+	{								\
+		.len = 4,						\
+		.is_buffered = FALSE,					\
+		DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),		\
+		.byte = {0x48, 0x83, 0xc6, (C)}				\
+	},								\
+	{								\
+		.len = 7,						\
+		.is_buffered = FALSE,					\
+		DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),		\
+		.byte = {0x48, 0xc7, 0xc2, 0x01, 0x00, 0x00, 0x00}	\
+	},								\
+	{								\
+		.len = 7,						\
+		.is_buffered = FALSE,					\
+		DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),		\
+		.byte = {0x48, 0xc7, 0xc0, 0x01, 0x00, 0x00, 0x00}	\
+	},								\
+	{								\
+		.len = 2,						\
+		.is_buffered = FALSE,					\
+		DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),		\
+		.byte = {0x0f, 0x05}					\
 	}
+#define DEF_SYSCALL_EXIT_0						\
+	{								\
+		.len = 3,						\
+		.is_buffered = FALSE,					\
+		DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),		\
+		.byte = {0x48, 0x31, 0xff}				\
+		/* xor	%rdi,	%rdi */					\
+	},								\
+	{								\
+		.len = 7,						\
+		.is_buffered = FALSE,					\
+		DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),		\
+		.byte = {0x48, 0xc7, 0xc0, 0x3c, 0x00, 0x00, 0x00}	\
+		/* mov	$60,	%rax */					\
+	},								\
+	{								\
+		.len = 2,						\
+		.is_buffered = FALSE,					\
+		DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),		\
+		.byte = {0x0f, 0x05}					\
+		/* syscall */						\
+	}
+#define DEF_RET							\
+	{							\
+		.len = 1,					\
+		.is_buffered = FALSE,				\
+		 DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),	\
+		.byte = {0xc3}					\
+		/* ret */					\
+	}
+
+struct codon hello_codn[HELLO_NUM_CODON] = {
+	DEF_SYSCALL_WRITE_A_ASCII_CODONS(TRUE, 0x29),	/* 'H' */
+	DEF_SYSCALL_WRITE_A_ASCII_CODONS(FALSE, 0x46),	/* 'e' */
+	DEF_SYSCALL_WRITE_A_ASCII_CODONS(FALSE, 0x4d),	/* 'l' */
+	DEF_SYSCALL_WRITE_A_ASCII_CODONS(FALSE, 0x4d),	/* 'l' */
+	DEF_SYSCALL_WRITE_A_ASCII_CODONS(FALSE, 0x50),	/* 'o' */
+	DEF_SYSCALL_EXIT_0,
+	DEF_RET
 };
 
 void create_hello_cell(void)
@@ -126,9 +179,27 @@ void create_hello_cell(void)
 	cell_save_to_file(&cell, FALSE);
 }
 
+void create_hello_code(void)
+{
+	unsigned int i;
+	for (i = 0; i < HELLO_NUM_CODON; i++) {
+		struct compound comp;
+		comp.len = hello_codn[i].len;
+		comp.int64 = hello_codn[i].int64;
+
+		unsigned int j;
+		for (j = 0; j < NUM_EACH_CODE; j++) {
+			char s[CODE_FILENAME_LEN];
+			sprintf(s, "hello_%02d_%02d", i, j);
+			comp_save_to_file("code/", s, &comp);
+		}
+	}
+}
+
 int main(void)
 {
 	create_hello_cell();
+	create_hello_code();
 
 	return 0;
 }

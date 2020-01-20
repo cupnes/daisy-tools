@@ -1,4 +1,5 @@
-TARGETS = create-init-cell create-incr-cell-data create-exit-cell
+TARGETS = create-init-cell create-incr-cell-data create-exit-cell	\
+		create-hello-cell-code
 CFLAGS = -Wall -Wextra -static
 COMMON_SRCS = ../sysenv.c ../cell.c ../compound.c ../common.c
 WORK_DIR ?= $(HOME)/dsy-work
@@ -14,8 +15,12 @@ create-incr-cell-data: create-incr-cell-data.c $(COMMON_SRCS)
 create-exit-cell: create-exit-cell.c $(COMMON_SRCS)
 	gcc $(CFLAGS) -o $@ $+
 
+create-hello-cell-code: create-hello-cell-code.c $(COMMON_SRCS)
+	gcc $(CFLAGS) -o $@ $+
+
 setup: $(TARGETS) create-init-codes dsy-name dsy-eval-init		\
-	dsy-eval-incr cell-fitness-logger dsy-log2hist dsy-show-hists
+	dsy-eval-incr dsy-eval-hello cell-fitness-logger dsy-log2hist	\
+	dsy-show-hists
 	mkdir -p $(WORK_DIR)/samples
 	cp $+ $(WORK_DIR)/samples/
 

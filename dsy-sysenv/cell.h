@@ -5,7 +5,7 @@
 #include "compound.h"
 #include "common.h"
 
-#define CELL_MUTATION_PROBABILITY	10
+#define CELL_MUTATION_PROBABILITY	100
 
 #define CELL_MAX_MEMBER_NAME_LEN	100
 #define CELL_MAX_MEMBER_VALUE_LEN	100

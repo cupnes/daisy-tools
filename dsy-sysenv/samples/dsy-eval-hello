@@ -31,9 +31,10 @@ exit_status=0
 ./${TMP_NAME}.elf >${TMP_NAME}.out || exit_status=$?
 
 if [ ${exit_status} -ne 0 ]; then
-	# 終了ステータスが0でないのは何かおかしい
-	# (exitは突然変異させないようにしているはずなので)
-	exit 200
+	# 突然変異でret命令が変なところに入る等、
+	# 終了ステータスが0ではない状態で終了するようになってしまった場合
+	# 適応度は0とする
+	exit 0
 fi
 
 num_codes=$(count_num_codes ${TMP_NAME}.asm)
@@ -44,8 +45,11 @@ if [ ${num_codes} -eq 0 ]; then
 fi
 
 #define HELLO_NUM_CODON	34	/* (+ (* 6 5) 3 1)34 */
-if [ ${num_codes} -le 25 ]; then
-	# 1 <= num_codes <= 25
+if [ ${num_codes} -le 14 ]; then
+	# 1 <= num_codes <= 14
+	fitness=30
+elif [ ${num_codes} -le 25 ]; then
+	# 15 <= num_codes <= 25
 	fitness=$((num_codes * 2))
 else
 	# 26 <= num_codes
@@ -62,10 +66,6 @@ elif grep -q '^He' ${TMP_NAME}.out; then
 	fitness=70
 elif grep -q '^H' ${TMP_NAME}.out; then
 	fitness=60
-fi
-
-if [ ${fitness} -lt 10 ]; then
-	fitness=10
 fi
 
 exit ${fitness}

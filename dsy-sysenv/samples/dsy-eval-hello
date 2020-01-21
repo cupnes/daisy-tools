@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -uex
 
@@ -45,27 +45,22 @@ if [ ${num_codes} -eq 0 ]; then
 fi
 
 #define HELLO_NUM_CODON	34	/* (+ (* 6 5) 3 1)34 */
-if [ ${num_codes} -le 14 ]; then
-	# 1 <= num_codes <= 14
-	fitness=30
-elif [ ${num_codes} -le 25 ]; then
-	# 15 <= num_codes <= 25
-	fitness=$((num_codes * 2))
-else
-	# 26 <= num_codes
-	fitness=50
+# 適応度 = 2 * コドン数 + 2
+fitness=$(((2 * num_codes) + 2))
+if [ ${fitness} -gt 70 ]; then
+	fitness=70
 fi
 
 if grep -q '^Hello' ${TMP_NAME}.out; then
 	fitness=100
 elif grep -q '^Hell' ${TMP_NAME}.out; then
-	fitness=90
+	fitness=94
 elif grep -q '^Hel' ${TMP_NAME}.out; then
-	fitness=80
+	fitness=88
 elif grep -q '^He' ${TMP_NAME}.out; then
-	fitness=70
+	fitness=82
 elif grep -q '^H' ${TMP_NAME}.out; then
-	fitness=60
+	fitness=76
 fi
 
 exit ${fitness}

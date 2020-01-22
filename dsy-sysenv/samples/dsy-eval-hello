@@ -45,10 +45,10 @@ if [ ${num_codes} -eq 0 ]; then
 fi
 
 #define HELLO_NUM_CODON	34	/* (+ (* 6 5) 3 1)34 */
-# 適応度 = 2 * コドン数 + 26
-fitness=$(((2 * num_codes) + 26))
-if [ ${fitness} -gt 94 ]; then
-	fitness=94
+# 適応度 = コドン数 + 46
+fitness=$((num_codes + 46))
+if [ ${fitness} -gt 90 ]; then
+	fitness=90
 fi
 
 if grep -q '^Hello' ${TMP_NAME}.out; then

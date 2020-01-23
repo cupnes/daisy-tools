@@ -6,7 +6,7 @@
 #include "cell.h"
 #include "common.h"
 
-#define JSON_BUF_SIZE	4096
+#define JSON_BUF_SIZE	40960
 
 static bool_t is_verbose = FALSE;
 static bool_t is_json = FALSE;

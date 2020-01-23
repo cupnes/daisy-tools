@@ -11,7 +11,7 @@
 #include "sysenv.h"
 #include "common.h"
 
-#define CELL_STR_BUF_SIZE	4096
+#define CELL_STR_BUF_SIZE	40960
 
 /* 戻り値：TRUE=実行可能になった/FALSE=まだ実行不可 */
 static bool_t get_args(struct cell *cell)

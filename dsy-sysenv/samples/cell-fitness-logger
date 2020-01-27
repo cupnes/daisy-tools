@@ -15,7 +15,7 @@ else
 	wait_sec=600
 fi
 
-while :; do
+while [ -f running ]; do
 	dump_fitness_list >log/cell_fitness_$(date '+%Y%m%d%H%M%S').log
 	sleep ${wait_sec}
 done

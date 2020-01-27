@@ -1,0 +1,60 @@
+#!/bin/bash
+
+set -uex
+
+TMP_NAME=.test
+
+count_num_codes()
+{
+	asm=$1
+	begin=$(grep -En '^0.* <\.data>:$' ${asm} | cut -d':' -f1)
+	begin=$((begin + 1))
+	sed -n "${begin},\$p" ${asm} | wc -l
+}
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 CELL_FILENAME" 1>&2
+	exit 200
+fi
+
+bin/dsy-cell2elf $1 ${TMP_NAME}.elf
+bin/dsy-elf2asm ${TMP_NAME}.elf ${TMP_NAME}.asm
+
+for n in $(grep -n syscall ${TMP_NAME}.asm | cut -d':' -f1); do
+	if ! sed -n "$((n - 1))p" ${TMP_NAME}.asm | grep -qE 'mov.*,%rax$'; then
+		exit 0
+	fi
+done
+
+chmod +x ${TMP_NAME}.elf
+exit_status=0
+./${TMP_NAME}.elf >${TMP_NAME}.out || exit_status=$?
+
+if [ ${exit_status} -ne 0 ]; then
+	# 突然変異でret命令が変なところに入る等、
+	# 終了ステータスが0ではない状態で終了するようになってしまった場合
+	# 適応度は0とする
+	exit 0
+fi
+
+num_codes=$(count_num_codes ${TMP_NAME}.asm)
+
+if [ ${num_codes} -eq 0 ]; then
+	# num_codes == 0 は何かがおかしい
+	exit 200
+fi
+
+#define PUTA_NUM_CODON	10	/* (+ 6 3 1)10 */
+# 適応度 = 5 * コドン数 + 30
+fitness=$(((5 * num_codes) + 30))
+if [ ${fitness} -gt 90 ]; then
+	fitness=90
+fi
+
+if grep -q '^A' ${TMP_NAME}.out; then
+	fitness=100
+elif [ $(wc -c ${TMP_NAME}.out | cut -d' ' -f1) -gt 0 ]; then
+	fitness=$((fitness + 9))
+fi
+
+exit ${fitness}

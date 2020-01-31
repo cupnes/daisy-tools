@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -uex
+
+if [ $# -ne 2 ]; then
+	echo "Usage: $0 SYSCALL_NUM NUM_CODES" 1>&2
+	exit 1
+fi
+
+syscall_num=$1
+num_codes=$2
+
+syscall_byte=$(printf '%02x' ${syscall_num})
+for i in $(seq -w 0 $((num_codes - 1))); do
+	echo -en "\x07\x00\x00\x00\x00\x00\x00\x00" \
+	     >code/syscall_${syscall_byte}_${i}
+	echo -en "\x48\x31\xc0\xb0\x${syscall_byte}\x0f\x05\x00" \
+	     >>code/syscall_${syscall_byte}_${i}
+done

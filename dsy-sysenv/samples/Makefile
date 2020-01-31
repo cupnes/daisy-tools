@@ -21,9 +21,9 @@ create-puta-cell-code: create-puta-cell-code.c $(COMMON_SRCS)
 create-hello-cell-code: create-hello-cell-code.c $(COMMON_SRCS)
 	gcc $(CFLAGS) -o $@ $+
 
-setup: $(TARGETS) create-init-codes dsy-name dsy-eval-init		\
-	dsy-eval-exit dsy-eval-exit_0 dsy-eval-incr dsy-eval-puta	\
-	dsy-eval-hello cell-fitness-logger dsy-log2hist			\
+setup: $(TARGETS) create-init-codes create-syscall-code dsy-name	\
+	dsy-eval-init dsy-eval-exit dsy-eval-exit_0 dsy-eval-incr	\
+	dsy-eval-puta dsy-eval-hello cell-fitness-logger dsy-log2hist	\
 	dsy-show-hists
 	mkdir -p $(WORK_DIR)/samples
 	cp $+ $(WORK_DIR)/samples/

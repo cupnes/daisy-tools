@@ -1,4 +1,5 @@
-CFLAGS = -Wall -Wextra -g -static
+CFLAGS = -Wall -Wextra -g
+# CFLAGS += -static
 SRCS   = main.c sysenv.c cell.c compound.c common.c
 BINS = dsy-sysenv dsy-exec-cell dsy-dump-cell dsy-edit-cell	\
 	dsy-cell2elf dsy-elf2asm dsy-dump-ascii-list

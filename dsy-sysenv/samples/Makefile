@@ -1,6 +1,7 @@
 TARGETS = create-init-cell create-incr-cell-data create-exit-cell	\
 		create-puta-cell-code create-hello-cell-code
-CFLAGS = -Wall -Wextra -static
+CFLAGS = -Wall -Wextra
+# CFLAGS += -static
 COMMON_SRCS = ../sysenv.c ../cell.c ../compound.c ../common.c
 WORK_DIR ?= $(HOME)/dsy-work
 

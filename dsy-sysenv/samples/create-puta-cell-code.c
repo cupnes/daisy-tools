@@ -6,24 +6,23 @@
 #include "../common.h"
 
 /*
-# write(int fd, const void *buf, size_t count): A	6 insts 34 bytes
+# write(int fd, const void *buf, size_t count): A	5 codes (+ (* 7 4) 4)32 bytes
 0x48, 0xc7, 0xc7, 0x01, 0x00, 0x00, 0x00,	mov	$1,	%rdi
 0x48, 0xc7, 0xc6, 0x78, 0x00, 0x40, 0x00,	mov	$0x400078,	%rsi
 0x48, 0x83, 0xc6, 0x22,				add	$34,	%rsi
 0x48, 0xc7, 0xc2, 0x01, 0x00, 0x00, 0x00,	mov	$1,	%rdx
-0x48, 0xc7, 0xc0, 0x01, 0x00, 0x00, 0x00,	mov	$1,	%rax
-0x0f, 0x05,					syscall
-# exit(int status)	3 insts 12 bytes
+0x48, 0x31, 0xc0, 0xb0, 0x01, 0x0f, 0x05,	xor %rax,%rax	mov $0x1,%al	syscall
+# exit(int status)	2 codes (+ 3 7)10 bytes
 0x48, 0x31, 0xff,				xor	%rdi,	%rdi
-0x48, 0xc7, 0xc0, 0x3c, 0x00, 0x00, 0x00,	mov	$60,	%rax
-0x0f, 0x05,					syscall
-# return	1 inst 1 byte
+0x48, 0x31, 0xc0, 0xb0, 0x3c, 0x0f, 0x05,	xor %rax,%rax	mov $0x60,%al	syscall
+# return	1 code 1 byte
 0xc3						ret
+# All: (+ 5 2 1)8 codes (+ 32 10 1)43 bytes
  */
 
 #define PUTA_LIFE_DURATION	100
-#define PUTA_NUM_CODON	10	/* (+ 6 3 1)10 */
-#define FUNC_BUF_SIZE	200	/* (+ 34 12 1)47 */
+#define PUTA_NUM_CODON	8
+#define FUNC_BUF_SIZE	200
 #define START_ASCII_SPACE	0x00400078
 
 #define NUM_EACH_CODE	100
@@ -63,47 +62,31 @@
 		.len = 7,						\
 		.is_buffered = FALSE,					\
 		DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),		\
-		.byte = {0x48, 0xc7, 0xc0, 0x01, 0x00, 0x00, 0x00}	\
-	},								\
-	{								\
-		.len = 2,						\
-		.is_buffered = FALSE,					\
-		DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),		\
-		.byte = {0x0f, 0x05}					\
+		.byte = {0x48, 0x31, 0xc0, 0xb0, 0x01, 0x0f, 0x05}	\
 	}
 #define DEF_SYSCALL_EXIT_0						\
 	{								\
 		.len = 3,						\
 		.is_buffered = FALSE,					\
-		DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),		\
+		DEF_MUTATE_FLG(FALSE, TRUE, TRUE, TRUE),		\
 		.byte = {0x48, 0x31, 0xff}				\
-		/* xor	%rdi,	%rdi */					\
 	},								\
 	{								\
 		.len = 7,						\
 		.is_buffered = FALSE,					\
-		DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),		\
-		.byte = {0x48, 0xc7, 0xc0, 0x3c, 0x00, 0x00, 0x00}	\
-		/* mov	$60,	%rax */					\
-	},								\
-	{								\
-		.len = 2,						\
-		.is_buffered = FALSE,					\
-		DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),		\
-		.byte = {0x0f, 0x05}					\
-		/* syscall */						\
+		DEF_MUTATE_FLG(TRUE, TRUE, TRUE, TRUE),			\
+		.byte = {0x48, 0x31, 0xc0, 0xb0, 0x3c, 0x0f, 0x05}	\
 	}
 #define DEF_RET							\
 	{							\
 		.len = 1,					\
 		.is_buffered = FALSE,				\
-		 DEF_MUTATE_FLG(FALSE, FALSE, FALSE, FALSE),	\
+		 DEF_MUTATE_FLG(TRUE, TRUE, TRUE, TRUE),	\
 		.byte = {0xc3}					\
-		/* ret */					\
 	}
 
 struct codon puta_codn[PUTA_NUM_CODON] = {
-	DEF_SYSCALL_WRITE_A_ASCII_CODONS(TRUE, 0x22),	/* 'A' */
+	DEF_SYSCALL_WRITE_A_ASCII_CODONS(FALSE, 0x22),	/* 'A' */
 	DEF_SYSCALL_EXIT_0,
 	DEF_RET
 };

@@ -5,68 +5,48 @@
 #include "../sysenv.h"
 #include "../common.h"
 
-/* exit(2)
+/*
+# exit(int status)	2 codes (+ 3 7)10 bytes
 0x48, 0x31, 0xff,				xor	%rdi,	%rdi
-0x48, 0xc7, 0xc0, 0x3c, 0x00, 0x00, 0x00,	mov	$60,	%rax
-0x0f, 0x05,					syscall
+0x48, 0x31, 0xc0, 0xb0, 0x3c, 0x0f, 0x05,	xor %rax,%rax	mov $0x60,%al	syscall
+# return	1 code 1 byte
 0xc3						ret
+# All: (+ 2 1)3 codes (+ 10 1)11 bytes
  */
 
 #define EXIT_LIFE_DURATION	100
-#define EXIT_NUM_CODON	4
+#define EXIT_NUM_CODON	3
 #define FUNC_BUF_SIZE	100
 
-struct codon exit_codn[EXIT_NUM_CODON] = {
-	/* { */
-	/* 	.len = 7, */
-	/* 	.is_buffered = FALSE, */
-	/* 	.mutate_flg.insp_dis = FALSE, */
-	/* 	.mutate_flg.insn_dis = TRUE, */
-	/* 	.mutate_flg.mod_dis = TRUE, */
-	/* 	.mutate_flg.rem_dis = TRUE, */
-	/* 	.byte = {0x48, 0xc7, 0xc7, 0x01, 0x00, 0x00, 0x00} */
-	/* 	/\* mov    $0x1,%rdi *\/ */
-	/* }, */
-	{
-		.len = 3,
-		.is_buffered = FALSE,
-		.mutate_flg.insp_dis = FALSE,
-		.mutate_flg.insn_dis = TRUE,
-		.mutate_flg.mod_dis = TRUE,
-		.mutate_flg.rem_dis = TRUE,
-		.byte = {0x48, 0x31, 0xff}
-		/* xor	%rdi,	%rdi */
-	},
-	{
-		.len = 7,
-		.is_buffered = FALSE,
-		.mutate_flg.insp_dis = TRUE,
-		.mutate_flg.insn_dis = TRUE,
-		.mutate_flg.mod_dis = TRUE,
-		.mutate_flg.rem_dis = TRUE,
-		.byte = {0x48, 0xc7, 0xc0, 0x3c, 0x00, 0x00, 0x00}
-		/* mov	$60,	%rax */
-	},
-	{
-		.len = 2,
-		.is_buffered = FALSE,
-		.mutate_flg.insp_dis = TRUE,
-		.mutate_flg.insn_dis = TRUE,
-		.mutate_flg.mod_dis = TRUE,
-		.mutate_flg.rem_dis = TRUE,
-		.byte = {0x0f, 0x05}
-		/* syscall */
-	},
-	{
-		.len = 1,
-		.is_buffered = FALSE,
-		.mutate_flg.insp_dis = TRUE,
-		.mutate_flg.insn_dis = TRUE,
-		.mutate_flg.mod_dis = TRUE,
-		.mutate_flg.rem_dis = TRUE,
-		.byte = {0xc3}
-		/* ret */
+#define DEF_MUTATE_FLG(INSP_DIS, INSN_DIS, MOD_DIS, REM_DIS)	\
+		.mutate_flg.insp_dis = (INSP_DIS),		\
+		.mutate_flg.insn_dis = (INSN_DIS),		\
+		.mutate_flg.mod_dis = (MOD_DIS),		\
+		.mutate_flg.rem_dis = (REM_DIS)
+#define DEF_SYSCALL_EXIT_0						\
+	{								\
+		.len = 3,						\
+		.is_buffered = FALSE,					\
+		DEF_MUTATE_FLG(FALSE, TRUE, TRUE, TRUE),		\
+		.byte = {0x48, 0x31, 0xff}				\
+	},								\
+	{								\
+		.len = 7,						\
+		.is_buffered = FALSE,					\
+		DEF_MUTATE_FLG(TRUE, TRUE, TRUE, TRUE),			\
+		.byte = {0x48, 0x31, 0xc0, 0xb0, 0x3c, 0x0f, 0x05}	\
 	}
+#define DEF_RET							\
+	{							\
+		.len = 1,					\
+		.is_buffered = FALSE,				\
+		DEF_MUTATE_FLG(TRUE, TRUE, TRUE, TRUE),		\
+		.byte = {0xc3}					\
+	}
+
+struct codon exit_codn[EXIT_NUM_CODON] = {
+	DEF_SYSCALL_EXIT_0,
+	DEF_RET
 };
 
 void create_exit_cell(void)

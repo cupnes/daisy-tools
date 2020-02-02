@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -uex
+
+TMP_NAME=.test
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 CELL_FILE" 1>&2
+	exit 200
+fi
+
+cell_file=$1
+bin/dsy-cell2elf ${cell_file} ${TMP_NAME}.elf
+chmod +x ${TMP_NAME}.elf
+./${TMP_NAME}.elf >${TMP_NAME}.out || true
+if grep -q 'A' ${TMP_NAME}.out; then
+	exit 100
+fi
+exit 50

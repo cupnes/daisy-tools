@@ -2,21 +2,14 @@
 
 set -uex
 
-TMP_NAME=.test
-
 if [ $# -ne 1 ]; then
-	echo "Usage: $0 CELL_FILENAME" 1>&2
+	echo "Usage: $0 CELL_FILE" 1>&2
 	exit 200
 fi
 
-bin/dsy-cell2elf $1 ${TMP_NAME}.elf
-bin/dsy-elf2asm ${TMP_NAME}.elf ${TMP_NAME}.asm
-
-for n in $(grep -n syscall ${TMP_NAME}.asm | cut -d':' -f1); do
-	if ! sed -n "$((n - 1))p" ${TMP_NAME}.asm | grep -qE 'mov.*,%rax$'; then
-		exit 0
-	fi
-done
-
-chmod +x ${TMP_NAME}.elf
-./${TMP_NAME}.elf && exit 100 || exit 10
+cell_file=$1
+bin/dsy-cell2elf $cell_file ${cell_file}.elf
+chmod +x ${cell_file}.elf
+./${cell_file}.elf && fitness=100 || fitness=50
+rm ${cell_file}.elf
+exit $fitness

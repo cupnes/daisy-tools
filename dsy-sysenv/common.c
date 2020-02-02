@@ -14,6 +14,8 @@ size_t fread_safe(void *ptr, size_t size, FILE *stream)
 		ASSERT(ferror(stream) == 0);
 		p += n;
 		read_bytes += n;
+		if (feof(stream) != 0)
+			break;
 	}
 	return read_bytes;
 }
@@ -27,6 +29,8 @@ size_t fwrite_safe(void *ptr, size_t size, FILE *stream)
 		ASSERT(ferror(stream) == 0);
 		p += n;
 		write_bytes += n;
+		if (feof(stream) != 0)
+			break;
 	}
 	return write_bytes;
 }

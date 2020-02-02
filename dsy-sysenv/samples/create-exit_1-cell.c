@@ -6,12 +6,12 @@
 #include "../common.h"
 
 /*
-# exit(int status)	2 codes (+ 3 7)10 bytes
-0x48, 0x31, 0xff,				xor	%rdi,	%rdi
-0x48, 0x31, 0xc0, 0xb0, 0x3c, 0x0f, 0x05,	xor %rax,%rax	mov $60,%al	syscall
+# exit(int status)	2 codes (+ 7 7)14 bytes
+0x48, 0xc7, 0xc7, 0x01, 0x00, 0x00, 0x00,	mov	$1,	%rdi
+0x48, 0x31, 0xc0, 0xb0, 0x3c, 0x0f, 0x05,	xor %rax,%rax	mov $0x60,%al	syscall
 # return	1 code 1 byte
 0xc3						ret
-# All: (+ 2 1)3 codes (+ 10 1)11 bytes
+# All: (+ 2 1)3 codes (+ 14 1)15 bytes
  */
 
 #define EXIT_LIFE_DURATION	100
@@ -23,12 +23,12 @@
 		.mutate_flg.insn_dis = (INSN_DIS),		\
 		.mutate_flg.mod_dis = (MOD_DIS),		\
 		.mutate_flg.rem_dis = (REM_DIS)
-#define DEF_SYSCALL_EXIT_0						\
+#define DEF_SYSCALL_EXIT_1						\
 	{								\
-		.len = 3,						\
+		.len = 7,						\
 		.is_buffered = FALSE,					\
 		DEF_MUTATE_FLG(FALSE, TRUE, TRUE, TRUE),		\
-		.byte = {0x48, 0x31, 0xff}				\
+		.byte = {0x48, 0xc7, 0xc7, 0x01, 0x00, 0x00, 0x00}	\
 	},								\
 	{								\
 		.len = 7,						\
@@ -45,7 +45,7 @@
 	}
 
 struct codon exit_codn[EXIT_NUM_CODON] = {
-	DEF_SYSCALL_EXIT_0,
+	DEF_SYSCALL_EXIT_1,
 	DEF_RET
 };
 
@@ -76,7 +76,7 @@ void create_exit_cell(void)
 	for (i = 0; i < CELL_MAX_ARGS; i++)
 		cell.attr.args_buf[i] = 0;
 	cell.attr.num_codns = EXIT_NUM_CODON;
-	strncpy(cell.attr.filename, "exit", MAX_FILENAME_LEN);
+	strncpy(cell.attr.filename, "exit_1", MAX_FILENAME_LEN);
 
 	/* DNAの初期化 */
 	cell.codn_list = exit_codn;

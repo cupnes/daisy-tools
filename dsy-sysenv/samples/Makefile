@@ -1,6 +1,6 @@
 TARGETS = create-init-cell create-incr-cell-data create-exit-cell	\
 		create-exit_1-cell create-puta-cell-code		\
-		create-hello-cell-code
+		create-hello-cell-code create-img2x2_0-cell
 CFLAGS = -Wall -Wextra
 # CFLAGS += -static
 COMMON_SRCS = ../sysenv.c ../cell.c ../compound.c ../common.c
@@ -24,6 +24,9 @@ create-puta-cell-code: create-puta-cell-code.c $(COMMON_SRCS)
 	gcc $(CFLAGS) -o $@ $+
 
 create-hello-cell-code: create-hello-cell-code.c $(COMMON_SRCS)
+	gcc $(CFLAGS) -o $@ $+
+
+create-img2x2_0-cell: create-img2x2_0-cell.c $(COMMON_SRCS)
 	gcc $(CFLAGS) -o $@ $+
 
 setup: $(TARGETS) create-exit-codes create-syscall-code dsy-name	\

@@ -755,7 +755,12 @@ void cell_do_cycle(char *filename)
 			syslog(LOG_DEBUG,
 			       "cell[%s]: fitness is MAX_FITNESS(%d).",
 			       cell.attr.filename, cell.attr.fitness);
-			sysenv_exit();
+			if (sysenv_is_endless() == TRUE) {
+				syslog(LOG_DEBUG,
+				       "cell[%s]: don't exit. (endless mode)",
+				       cell.attr.filename);
+			} else
+				sysenv_exit();
 		}
 	}
 

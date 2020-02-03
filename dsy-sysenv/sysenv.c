@@ -299,6 +299,24 @@ bool_t sysenv_is_running(void)
 	return is_running;
 }
 
+bool_t sysenv_is_endless(void)
+{
+	syslog(LOG_DEBUG, "%s: a", __FUNCTION__);
+
+	bool_t is_endless;
+
+	FILE *endless_fp = fopen(ENDLESS_FILENAME, "r");
+	if (endless_fp != NULL) {
+		fclose(endless_fp);
+		is_endless = TRUE;
+	} else
+		is_endless = FALSE;
+
+	syslog(LOG_DEBUG, "%s: b %d", __FUNCTION__, is_endless);
+
+	return is_endless;
+}
+
 void sysenv_exit(void)
 {
 	if (sysenv_is_running() == TRUE) {

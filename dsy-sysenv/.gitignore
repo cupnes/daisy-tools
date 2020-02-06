@@ -4,6 +4,7 @@ dsy-exec-cell
 dsy-dump-cell
 dsy-edit-cell
 dsy-cell2elf
+dsy-cell2pbm
 dsy-dump-ascii-list
 
 busybox*

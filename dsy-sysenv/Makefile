@@ -2,10 +2,10 @@ CFLAGS = -Wall -Wextra -g
 # CFLAGS += -static
 SRCS   = main.c sysenv.c cell.c compound.c common.c
 BINS = dsy-sysenv dsy-exec-cell dsy-dump-cell dsy-edit-cell	\
-	dsy-cell2elf dsy-elf2asm dsy-dump-ascii-list
+	dsy-cell2elf dsy-cell2pbm dsy-dump-ascii-list
 WORK_DIR ?= $(HOME)/dsy-work
 
-all: $(BINS) samples
+all: $(BINS) dsy-elf2asm samples
 
 dsy-sysenv: $(SRCS)
 	gcc $(CFLAGS) -o $@ $+
@@ -20,6 +20,9 @@ dsy-edit-cell: dsy-edit-cell.c sysenv.c cell.c compound.c common.c
 	gcc $(CFLAGS) -o $@ $+
 
 dsy-cell2elf: dsy-cell2elf.c sysenv.c cell.c compound.c common.c
+	gcc $(CFLAGS) -o $@ $+
+
+dsy-cell2pbm: dsy-cell2pbm.c sysenv.c cell.c compound.c common.c
 	gcc $(CFLAGS) -o $@ $+
 
 dsy-dump-ascii-list: dsy-dump-ascii-list.c sysenv.c cell.c compound.c common.c
@@ -60,9 +63,7 @@ sush:
 	sudo unshare -pf chroot $(WORK_DIR) sh
 
 clean:
-	rm -rf *~ tools/*~ dsy-sysenv dsy-exec-cell dsy-dump-cell	\
-		dsy-edit-cell dsy-cell2elf dsy-dump-ascii-list		\
-		busybox-static*
+	rm -rf *~ tools/*~ $(BINS) busybox-static*
 	make -C samples clean
 
 .PHONY: samples setup run sh sush clean

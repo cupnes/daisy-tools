@@ -45,7 +45,7 @@ enum {
 };
 
 struct codon codn[NUM_CODONS] = {
-	PIX(BLACK), PIX(WHITE),
+	PIX(WHITE), PIX(WHITE),
 	PIX(WHITE), PIX(WHITE)
 };
 

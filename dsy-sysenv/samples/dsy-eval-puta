@@ -31,16 +31,19 @@ if [ ${num_codns} -eq 0 ]; then
 	exit 200
 fi
 
-#define PUTA_NUM_CODON	8
+# コドン数に応じて適応度を上げる
 # 適応度 = 6 * コドン数 + 32
 fitness=$(((6 * num_codns) + 32))
 if [ ${fitness} -gt 90 ]; then
+	# コドン数に応じた適応度では90以上にはならない
 	fitness=90
 fi
 
 if grep -q 'A' ${TMP_NAME}.out; then
+	# 'A'を出力できた場合、適応度100
 	fitness=100
 elif [ $(wc -c ${TMP_NAME}.out | cut -d' ' -f1) -gt 0 ]; then
+	# 'A'でなくとも何かを出力したなら適応度に9点加点する
 	fitness=$((fitness + 9))
 fi
 

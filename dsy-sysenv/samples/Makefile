@@ -1,6 +1,7 @@
 TARGETS = create-init-cell create-incr-cell-data create-exit-cell	\
-		create-exit_1-cell create-puta-cell-code		\
-		create-hello-cell-code create-img2x2_0-cell
+		create-exit_1-cell create-puta-codes			\
+		create-puta-cell-code create-hello-cell-code		\
+		create-img2x2_0-cell
 CFLAGS = -Wall -Wextra
 # CFLAGS += -static
 COMMON_SRCS = ../sysenv.c ../cell.c ../compound.c ../common.c
@@ -18,6 +19,9 @@ create-exit-cell: create-exit-cell.c $(COMMON_SRCS)
 	gcc $(CFLAGS) -o $@ $+
 
 create-exit_1-cell: create-exit_1-cell.c $(COMMON_SRCS)
+	gcc $(CFLAGS) -o $@ $+
+
+create-puta-codes: create-puta-codes.c $(COMMON_SRCS)
 	gcc $(CFLAGS) -o $@ $+
 
 create-puta-cell-code: create-puta-cell-code.c $(COMMON_SRCS)

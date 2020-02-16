@@ -2,7 +2,7 @@
 
 set -uex
 
-PATH=bin:samples:$PATH
+PATH=$(pwd)/bin:$(pwd)/samples:${PATH}
 
 if [ $# -ge 2 ]; then
 	echo "Usage: $0 [INTERVAL_SEC]" 1>&2
@@ -15,25 +15,28 @@ else
 	interval_sec=600
 fi
 
-mkdir -p .cell_log_tmp
 mkdir -p log/current_html
 
 while [ -f running ]; do
-	rm -f .cell_log_tmp/*
-	cp cell/* .cell_log_tmp/
-
 	log_dt=$(date '+%Y%m%d_%H%M%S')
 	mkdir -p log/${log_dt}
-	for cell_name in $(ls .cell_log_tmp); do
-		dsy-dump-cell -j ${cell_name} >log/${log_dt}/${cell_name}.json
-		dsy-cell2elf ${cell_name} log/${log_dt}/${cell_name}.elf
-		chmod +x log/${log_dt}/${cell_name}.elf
-		dsy-elf2asm log/${log_dt}/${cell_name}.{elf,asm}
 
-		# ${log_dt}ディレクトリを対象に
-		# 適応度ヒストグラムページと各細胞ページ作成
-		cell-log-html log/${log_dt}
+	cp -r cell log/${log_dt}/
+	cd log/${log_dt}/
+	for cell_name in $(ls cell); do
+		if ! dsy-dump-cell -j ${cell_name} >${cell_name}.json; then
+			rm ${cell_name}.json
+			continue
+		fi
+		dsy-cell2elf ${cell_name} ${cell_name}.elf
+		chmod +x ${cell_name}.elf
+		dsy-elf2asm ${cell_name}.{elf,asm}
 	done
+	cd ../../
+
+	# ${log_dt}ディレクトリを対象に
+	# 適応度ヒストグラムページと各細胞ページ作成
+	cell-log-html log/${log_dt}
 
 	# 現在の状態を保持するディレクトリを更新
 	rm -f log/current_html/*

@@ -24,11 +24,12 @@ case $# in
 	;;
 esac
 
-dd if=${elf} bs=1 skip=${SKIP_BYTES_TO_CODE} >.${elf}.bin
+t=$(mktemp)
+dd if=${elf} bs=1 skip=${SKIP_BYTES_TO_CODE} >${t}
 if [ -z "${asm}" ]; then
-	objdump -D -b binary -m i386:x86-64 .${elf}.bin
+	objdump -D -b binary -m i386:x86-64 ${t}
 else
-	objdump -D -b binary -m i386:x86-64 .${elf}.bin >${asm}
+	objdump -D -b binary -m i386:x86-64 ${t} >${asm}
 fi
 
-rm .${elf}.bin
+rm ${t}

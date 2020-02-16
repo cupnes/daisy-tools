@@ -1,21 +1,32 @@
-#!/bin/sh
+#!/bin/bash
 
-mkdir -p log
+set -uex
 
-dump_fitness_list() {
-	for c in $(ls cell); do
-		echo -n "${c} "
-		bin/dsy-dump-cell -j ${c} | jq -r .attr.fitness
-	done | sort -k2 -nr
-}
+PATH=bin:$PATH
+
+if [ $# -ge 2 ]; then
+	echo "Usage: $0 [INTERVAL_SEC]" 1>&2
+	exit 1
+fi
 
 if [ $# -eq 1 ]; then
-	wait_sec=$1
+	interval_sec=$1
 else
-	wait_sec=600
+	interval_sec=600
 fi
 
 while [ -f running ]; do
-	dump_fitness_list >log/cell_fitness_$(date '+%Y%m%d%H%M%S').log
-	sleep ${wait_sec}
+	rm -rf .cell_log_tmp
+	cp -r cell .cell_log_tmp
+
+	log_dt=$(date '+%Y%m%d_%H%M%S')
+	mkdir -p log/${log_dt}
+	for cell_name in $(ls .cell_log_tmp); do
+		dsy-dump-cell -j ${cell_name} >log/${log_dt}/${cell_name}.json
+		dsy-cell2elf ${cell_name} log/${log_dt}/${cell_name}.elf
+		chmod +x log/${log_dt}/${cell_name}.elf
+		dsy-elf2asm log/${log_dt}/${cell_name}.{elf,asm}
+	done
+
+	sleep ${interval_sec}
 done

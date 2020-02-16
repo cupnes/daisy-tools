@@ -5,7 +5,7 @@ BINS = dsy-sysenv dsy-exec-cell dsy-dump-cell dsy-edit-cell	\
 	dsy-cell2elf dsy-cell2pbm dsy-dump-ascii-list
 WORK_DIR ?= $(HOME)/dsy-work
 
-all: $(BINS) dsy-elf2asm samples
+all: $(BINS) samples
 
 dsy-sysenv: $(SRCS)
 	gcc $(CFLAGS) -o $@ $+
@@ -40,7 +40,7 @@ setup: all
 	mkdir -p $(WORK_DIR)/cell
 	mkdir -p $(WORK_DIR)/code
 	mkdir -p $(WORK_DIR)/data
-	cp $(BINS) $(WORK_DIR)/bin/
+	cp $(BINS) dsy-elf2asm $(WORK_DIR)/bin/
 	make -C samples setup WORK_DIR=$(WORK_DIR)
 
 setup_rootfs: all busybox-static

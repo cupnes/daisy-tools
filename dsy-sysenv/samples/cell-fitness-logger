@@ -2,7 +2,7 @@
 
 set -uex
 
-PATH=bin:$PATH
+PATH=bin:samples:$PATH
 
 if [ $# -ge 2 ]; then
 	echo "Usage: $0 [INTERVAL_SEC]" 1>&2
@@ -15,9 +15,12 @@ else
 	interval_sec=600
 fi
 
+mkdir -p .cell_log_tmp
+mkdir -p log/current_html
+
 while [ -f running ]; do
-	rm -rf .cell_log_tmp
-	cp -r cell .cell_log_tmp
+	rm -f .cell_log_tmp/*
+	cp cell/* .cell_log_tmp/
 
 	log_dt=$(date '+%Y%m%d_%H%M%S')
 	mkdir -p log/${log_dt}
@@ -26,7 +29,15 @@ while [ -f running ]; do
 		dsy-cell2elf ${cell_name} log/${log_dt}/${cell_name}.elf
 		chmod +x log/${log_dt}/${cell_name}.elf
 		dsy-elf2asm log/${log_dt}/${cell_name}.{elf,asm}
+
+		# ${log_dt}ディレクトリを対象に
+		# 適応度ヒストグラムページと各細胞ページ作成
+		cell-log-html log/${log_dt}
 	done
+
+	# 現在の状態を保持するディレクトリを更新
+	rm -f log/current_html/*
+	cp log/${log_dt}/*.html log/current_html/
 
 	sleep ${interval_sec}
 done

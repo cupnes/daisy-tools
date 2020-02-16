@@ -1,0 +1,85 @@
+#!/bin/bash
+
+set -uex
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 LOG_DIR_PATH" 1>&2
+	exit 1
+fi
+
+cd $1
+
+create_detail_page()
+{
+	cell_name=$1
+
+	echo '<html>'
+	echo '<head>'
+	echo '<style type="text/css">'
+	echo '<!--'
+	echo '.box {'
+	echo 'width: 700px;'
+	echo 'background-color: #e5e5e5;'
+	echo 'border: solid;'
+	echo '}'
+	echo '-->'
+	echo '</style>'
+	echo '</head>'
+	echo '<body>'
+	echo "<h1>細胞ファイル名：${name}</h1>"
+
+	echo '<h2>タンパク質(関数)の逆アセンブル結果</h2>'
+	echo '<pre class=box>'
+	cat ${cell_name}.asm
+	echo '</pre>'
+
+	echo '<h2>属性情報</h2>'
+	echo '<pre class=box>'
+	jq .attr ${cell_name}.json
+	echo '</pre>'
+
+	echo '<h2>各コドンの状態</h2>'
+	echo '<pre class=box>'
+	jq .codn_list[] ${cell_name}.json
+	echo '</pre>'
+
+	echo '</body>'
+	echo '</html>'
+}
+
+create_fitness_page()
+{
+	cell_list=$1
+
+	echo '<html>'
+	echo '<body>'
+	echo '<h1>適応度別細胞一覧</h1>'
+
+	echo '<table>'
+	for fitness in $(seq 0 100); do
+		echo '<tr>'
+		echo "<td>${fitness}</td>"
+		echo '<td>'
+		for name in $(awk "\$2==${fitness}{print \$1}" list.txt); do
+			echo "<a href=${name}.html>🌼</a>"
+		done
+		echo '</td>'
+		echo '</tr>'
+	done
+	echo '</table>'
+
+	echo '</body>'
+	echo '</html>'
+}
+
+for cell_json in $(ls *.json); do
+	name=$(echo ${cell_json} | rev | cut -d'.' -f2- | rev)
+	fitness=$(jq .attr.fitness ${cell_json})
+	echo "${name} ${fitness}"
+done | sort -k2 -n >list.txt
+
+while read name _fitness; do
+	create_detail_page ${name} >${name}.html
+done <list.txt
+
+create_fitness_page list.txt >index.html

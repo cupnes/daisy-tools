@@ -36,7 +36,7 @@ create-img2x2_0-cell: create-img2x2_0-cell.c $(COMMON_SRCS)
 setup: $(TARGETS) create-exit-codes create-syscall-code dsy-name	\
 	dsy-eval-init dsy-eval-exit dsy-eval-exit_0 dsy-eval-incr	\
 	dsy-eval-puta dsy-eval-puta_0 dsy-eval-hello			\
-	cell-fitness-logger dsy-log2hist dsy-show-hists
+	cell-fitness-logger cell-log-html dsy-log2hist dsy-show-hists
 	mkdir -p $(WORK_DIR)/samples
 	cp $+ $(WORK_DIR)/samples/
 

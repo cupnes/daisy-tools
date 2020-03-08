@@ -5,19 +5,24 @@ set -uex
 PATH=$(pwd)/bin:$(pwd)/samples:${PATH}
 
 if [ $# -ge 2 ]; then
-	echo "Usage: $0 [INTERVAL_SEC]" 1>&2
+	echo "Usage: $0 [--oneshot|INTERVAL_SEC]" 1>&2
 	exit 1
 fi
 
+is_oneshot="false"
 if [ $# -eq 1 ]; then
-	interval_sec=$1
+	if [ "$1" = "--oneshot" ]; then
+		is_oneshot="true"
+	else
+		interval_sec=$1
+	fi
 else
 	interval_sec=600
 fi
 
 mkdir -p log/current_html
 
-while [ -f running ]; do
+while [ -f running -o "${is_oneshot}" = "true" ]; do
 	log_dt=$(date '+%Y%m%d_%H%M%S')
 	mkdir -p log/${log_dt}
 
@@ -42,5 +47,9 @@ while [ -f running ]; do
 	rm -f log/current_html/*
 	cp log/${log_dt}/*.html log/current_html/
 
-	sleep ${interval_sec}
+	if [ "${is_oneshot}" = "true" ]; then
+		break
+	else
+		sleep ${interval_sec}
+	fi
 done

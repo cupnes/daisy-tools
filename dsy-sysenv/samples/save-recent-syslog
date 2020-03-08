@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -uex
+
+SYSLOG_FILE=/var/log/syslog
+
+PID=$(sudo grep 'main: wait_usec is' ${SYSLOG_FILE} | tail -n 1 | cut -d'[' -f2 | cut -d']' -f1)
+sudo grep dsy-sysenv ${SYSLOG_FILE} | sed -n "/dsy-sysenv\[${PID}\]: main: wait_usec is 1000000\.\$/,\$p" > syslog.log
+gzip syslog.log

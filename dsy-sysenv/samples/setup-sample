@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# set -uex
+set -ue
+
+show_usage() {
+	echo "Usage:" 1>&2
+	echo -e "\t$0 SAMPLE_NAME"
+	echo -e "\t$0 -h"
+	echo 1>&2
+	echo -e "\tSAMPLE_NAME: exit or puta" 1>&2
+}
+
+cleanup() {
+	rm -rf bin/dsy-name bin/dsy-eval cell/* code/* data/* log debug
+}
+
+setup_exit() {
+	ln -s ../samples/dsy-name bin/dsy-name
+	ln -s ../samples/dsy-eval-exit bin/dsy-eval
+
+	samples/create-init-cell
+
+	samples/create-exit-codes 100
+}
+
+setup_puta() {
+	ln -s ../samples/dsy-name bin/dsy-name
+	ln -s ../samples/dsy-eval-puta bin/dsy-eval
+
+	samples/create-exit-cell
+
+	samples/create-puta-codes 100
+}
+
+if [ $# -ne 1 ]; then
+	show_usage
+	exit 1
+fi
+if [ "$1" = "-h" ]; then
+	show_usage
+	exit 0
+fi
+
+cleanup
+
+case "$1" in
+"exit")
+	setup_exit
+	;;
+
+"puta")
+	setup_puta
+	;;
+
+*)
+	echo "Error: Unknown sample name \"$1\"." 1>&2
+	exit 1
+esac

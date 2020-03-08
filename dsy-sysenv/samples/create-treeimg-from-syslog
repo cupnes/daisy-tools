@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -uex
+
+zgrep 'was saved' syslog.log.gz | cut -d'[' -f3 | cut -d']' -f1 | sed 's/,/ -> c_/' | sed 's/^/  c_/' | sed 's/$/;/' | sed '1idigraph {' | sed '$a}' >tree.dot
+dot -Kdot -Tsvg tree.dot -otree.svg

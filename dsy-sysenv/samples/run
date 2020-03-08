@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# set -uex
+set -ue
+
+show_usage() {
+	echo "Usage: $0 [-d|-h]" 1>&2
+}
+
+if [ $# -ge 2 ]; then
+	show_usage
+	exit 1
+fi
+
+if [ $# -eq 1 ]; then
+	case "$1" in
+	"-d")
+		touch debug
+		;;
+
+	"-h")
+		show_usage
+		exit 0
+		;;
+
+	*)
+		echo "Error: Unknown option \"$1\"." 1>&2
+		exit 1
+		;;
+	esac
+fi
+
+touch running
+
+samples/cell-fitness-logger >>cell-fitness-logger.log 2>&1 &
+logger_pid=$!
+echo "logger_pid=${logger_pid}"
+trap "kill ${logger_pid}" SIGINT
+
+bin/dsy-sysenv >/dev/null 2>&1
+kill ${logger_pid}
+samples/cell-fitness-logger --oneshot >>cell-fitness-logger.log 2>&1

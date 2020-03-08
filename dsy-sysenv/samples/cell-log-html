@@ -16,6 +16,7 @@ create_detail_page()
 
 	echo '<html>'
 	echo '<head>'
+	echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">'
 	echo '<style type="text/css">'
 	echo '<!--'
 	echo '.box {'
@@ -53,6 +54,9 @@ create_fitness_page()
 	cell_list=$1
 
 	echo '<html>'
+	echo '<head>'
+	echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">'
+	echo '</head>'
 	echo '<body>'
 	echo '<h1>適応度別細胞一覧</h1>'
 

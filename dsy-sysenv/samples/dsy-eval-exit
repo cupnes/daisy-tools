@@ -1,6 +1,7 @@
 #!/bin/sh
 
-set -uex
+# set -uex
+set -ue
 
 TMP_NAME=.test
 
@@ -13,7 +14,7 @@ cell_filename=$1
 
 bin/dsy-cell2elf ${cell_filename} ${TMP_NAME}.elf
 chmod +x ${TMP_NAME}.elf
-./${TMP_NAME}.elf && exit 100 || exit_status=$?
+./${TMP_NAME}.elf >/dev/null 2>&1 && exit 100 || exit_status=$?
 
 # コドン数取得
 bin/dsy-dump-cell -j ${cell_filename} >${TMP_NAME}.json

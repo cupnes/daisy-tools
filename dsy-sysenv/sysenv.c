@@ -140,8 +140,9 @@ void sysenv_init(void)
 
 void sysenv_do_cycle(void)
 {
-	static unsigned int num_cycle = 0;
+	static unsigned int num_cycle = 1;
 	syslog(LOG_DEBUG, "sysenv: starts cycle %d.", num_cycle);
+	printf("========== %d 周期目 ==========\n", num_cycle);
 
 	/* 細胞ディレクトリ内のファイル一覧を取得 */
 	struct dirent **cell_namelist;
@@ -158,7 +159,7 @@ void sysenv_do_cycle(void)
 		       "(update_code file exists)");
 		update_all_code_list(cell_namelist, num_cell_files);
 		ASSERT(remove(UPDATE_CODE_FILENAME) == 0);
-	} else if (num_cycle == 0) {
+	} else if (num_cycle == 1) {
 		syslog(LOG_DEBUG, "sysenv: update all code list."
 		       " (this is the 1st cycle)");
 		update_all_code_list(cell_namelist, num_cell_files);
@@ -176,6 +177,8 @@ void sysenv_do_cycle(void)
 		free(cell_namelist[i]);
 	}
 	free(cell_namelist);
+
+	printf("\n");
 
 	num_cycle++;
 }

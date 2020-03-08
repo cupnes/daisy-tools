@@ -71,6 +71,8 @@ static bool_t growth(struct cell *cell)
 	syslog(LOG_DEBUG, "%s: c", __FUNCTION__);
 	syslog(LOG_DEBUG, "cell[%s]: got code %s.",
 	       cell->attr.filename, comp_make_str(&comp, comp_str));
+	printf("%s が化合物 [%s] を取り込みました。\n",
+	       cell->attr.filename, comp_str);
 
 	syslog(LOG_DEBUG, "%s: d", __FUNCTION__);
 
@@ -570,6 +572,12 @@ static void division(struct cell *cell)
 	sysenv_put_cell(&cell_new);
 	syslog(LOG_INFO, "cell[%s,%s]: %s was saved.", cell->attr.filename,
 	       cell_new.attr.filename, cell_new.attr.filename);
+	printf("%s が細胞分裂し %s を生みました。",
+	       cell->attr.filename, cell_new.attr.filename);
+	if (is_mutated == TRUE)
+		printf("(DNAに突然変異あり)\n");
+	else
+		printf("\n");
 }
 
 static void death(struct cell *cell)
@@ -748,6 +756,7 @@ void cell_do_cycle(char *filename)
 		unsigned char new_fitness = sysenv_exec_and_eval(&cell);
 		syslog(LOG_DEBUG, "cell[%s]: new fitness is %d.",
 		       cell.attr.filename, new_fitness);
+		printf("%s の適応度が %d になりました。\n", cell.attr.filename, new_fitness);
 		cell_load_from_file(&cell);
 		cell.attr.fitness = new_fitness;
 		if (cell.attr.fitness == CELL_MAX_FITNESS) {
@@ -778,6 +787,8 @@ void cell_do_cycle(char *filename)
 	/* 寿命を減らす */
 	cell.attr.life_left--;
 	syslog(LOG_DEBUG, "cell[%s]: life left has been decremented. (now=%d)",
+	       cell.attr.filename, cell.attr.life_left);
+	printf("%s の寿命が %d になりました。\n",
 	       cell.attr.filename, cell.attr.life_left);
 	if (cell.attr.life_left == 0) {
 		char *cell_str_buf = malloc(CELL_STR_BUF_SIZE);

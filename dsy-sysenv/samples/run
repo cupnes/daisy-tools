@@ -37,6 +37,7 @@ logger_pid=$!
 echo "logger_pid=${logger_pid}"
 trap "kill ${logger_pid}" SIGINT
 
-bin/dsy-sysenv >/dev/null 2>&1
+bin/dsy-sysenv
+
 kill ${logger_pid}
 samples/cell-fitness-logger --oneshot >>cell-fitness-logger.log 2>&1

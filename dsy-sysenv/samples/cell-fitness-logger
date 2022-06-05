@@ -4,6 +4,8 @@ set -uex
 
 PATH=$(pwd)/bin:$(pwd)/samples:${PATH}
 
+CURRENT_HTML_PATH=log/current_html
+
 if [ $# -ge 2 ]; then
 	echo "Usage: $0 [--oneshot|INTERVAL_SEC]" 1>&2
 	exit 1
@@ -20,7 +22,7 @@ else
 	interval_sec=600
 fi
 
-mkdir -p log/current_html
+mkdir -p ${CURRENT_HTML_PATH}
 
 while [ -f running -o "${is_oneshot}" = "true" ]; do
 	log_dt=$(date '+%Y%m%d_%H%M%S')
@@ -44,8 +46,8 @@ while [ -f running -o "${is_oneshot}" = "true" ]; do
 	cell-log-html log/${log_dt}
 
 	# 現在の状態を保持するディレクトリを更新
-	rm -f log/current_html/*
-	cp log/${log_dt}/*.html log/current_html/
+	rm -f ${CURRENT_HTML_PATH}/*
+	cp log/${log_dt}/*.html ${CURRENT_HTML_PATH}/
 
 	if [ "${is_oneshot}" = "true" ]; then
 		break

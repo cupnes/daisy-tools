@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# set -uex
+set -ue
+
+TMP_NAME=.test
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 CELL_FILENAME" 1>&2
+	exit 200
+fi
+
+cell_filename=$1
+
+bin/dsy-cell2elf ${cell_filename} ${TMP_NAME}.elf
+chmod +x ${TMP_NAME}.elf
+exit_status=0
+./${TMP_NAME}.elf >${TMP_NAME}.out 2>/dev/null || exit_status=$?
+
+if [ ${exit_status} -ne 0 ]; then
+	# 突然変異でret命令が変なところに入る等、
+	# 終了ステータスが0ではない状態で終了するようになってしまった場合
+	# 適応度は0とする
+	exit 0
+fi
+
+bin/dsy-dump-cell -j ${cell_filename} >${TMP_NAME}.json
+num_codns=$(jq .attr.num_codns ${TMP_NAME}.json)
+
+if [ ${num_codns} -eq 0 ]; then
+	# コドン数=0 は何かがおかしい
+	exit 200
+fi
+
+# コドン数に応じて適応度を上げる
+# 適応度 = 6 * コドン数 + 32
+fitness=$(((6 * num_codns) + 32))
+if [ ${fitness} -gt 50 ]; then
+	# コドン数に応じた適応度では50以上にはならない
+	fitness=50
+fi
+
+num_chars=$(wc -c ${TMP_NAME}.out | cut -d' ' -f1)
+if [ ${num_chars} -gt 0 ]; then
+	# 1文字以上文字を出力したらその時点で適応度60
+	fitness=60
+
+	# 出力した文字数*10を適応度へ加算
+	fitness=$((fitness + (num_chars * 10)))
+
+	# 適応度は100より大きい値にはならない
+	if [ ${fitness} -gt 100 ]; then
+		fitness=100
+	fi
+fi
+
+exit ${fitness}

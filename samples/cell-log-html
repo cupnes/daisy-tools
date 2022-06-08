@@ -30,7 +30,13 @@ create_detail_page()
 	echo '<body>'
 	echo "<h1>細胞ファイル名：${name}</h1>"
 
-	echo '<h2>タンパク質(関数)の逆アセンブル結果</h2>'
+	echo '<h2>タンパク質(関数)</h2>'
+	echo '<h3>strace結果</h3>'
+	echo '<pre class=box>'
+	strace ./${cell_name}.elf 2>&1 || true
+	echo '</pre>'
+
+	echo '<h3>逆アセンブル結果</h3>'
 	echo '<pre class=box>'
 	cat ${cell_name}.asm
 	echo '</pre>'

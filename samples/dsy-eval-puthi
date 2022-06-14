@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# set -uex
+set -ue
+
+TMP_NAME=.test
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 CELL_FILENAME" 1>&2
+	exit 200
+fi
+
+cell_filename=$1
+
+bin/dsy-cell2elf ${cell_filename} ${TMP_NAME}.elf
+chmod +x ${TMP_NAME}.elf
+exit_status=0
+./${TMP_NAME}.elf >${TMP_NAME}.out 2>${TMP_NAME}.err || exit_status=$?
+
+if [ ${exit_status} -ne 0 ]; then
+	# 突然変異でret命令が変なところに入る等、
+	# 終了ステータスが0ではない状態で終了するようになってしまった場合
+	# 適応度は0とする
+	exit 0
+fi
+
+for f in ${TMP_NAME}.out ${TMP_NAME}.err; do
+	tr -d '[\n\040-\176]' <${f} >${f}.rmascii
+	if [ $(stat -c '%s' ${f}.rmascii) -ne 0 ]; then
+		# 標準出力/標準エラー出力に、
+		# サポートASCII文字以外のデータを出力した場合
+		# 適応度は0とする
+		exit 0
+	fi
+done
+
+bin/dsy-dump-cell -j ${cell_filename} >${TMP_NAME}.json
+num_codns=$(jq .attr.num_codns ${TMP_NAME}.json)
+
+if [ ${num_codns} -eq 0 ]; then
+	# コドン数=0 は何かがおかしい
+	exit 200
+fi
+
+# コドン数に応じて適応度を上げる
+# 適応度 = コドン数
+fitness=$num_codns
+if [ ${fitness} -gt 30 ]; then
+	# コドン数に応じた適応度では30以上にはならない
+	fitness=30
+fi
+
+num_chars=$(wc -c ${TMP_NAME}.out | cut -d' ' -f1)
+if [ ${num_chars} -gt 0 ]; then
+	# 1文字以上文字を出力したらその時点で適応度40
+	fitness=40
+
+	# 出力した文字数*5を適応度へ加算
+	fitness=$((fitness + (num_chars * 5)))
+
+	# ここでの適応度は70以上にはならない
+	if [ ${fitness} -gt 70 ]; then
+		fitness=70
+	fi
+fi
+
+if grep -q H ${TMP_NAME}.out; then
+	# 'H'を出力していたら適応度に10加算
+	fitness=$((fitness + 10))
+fi
+
+if grep -q i ${TMP_NAME}.out; then
+	# 'i'を出力していたら適応度に10加算
+	fitness=$((fitness + 10))
+fi
+
+if grep -q Hi ${TMP_NAME}.out; then
+	# 'Hi'を含む文字列を出力していたら適応度を100にする
+	fitness=100
+fi
+
+exit ${fitness}

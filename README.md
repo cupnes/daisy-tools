@@ -50,7 +50,7 @@ $ sudo apt install libc6 bash jq
 $ make setup
 ```
 
-なお、ここで生成される`dsy-work`ディレクトリをZIPアーカイブにしたものが、[リリースページ](https://github.com/cupnes/daisy-tools/releases)で公開している`dsy-work_YYYYMMDD.zip`や`daisy-tools_vYYYYMMDD.zip`です。(バージョンによってアーカイブ名が違っているのに意味はありません。)
+なお、ここで生成される`dsy-work`ディレクトリをZIPアーカイブにしたものが、[リリースページ](https://github.com/cupnes/daisy-tools/releases)で公開している`dsy-work_YYYYMMDD.zip`です。
 
 ### 初期設定
 `daisy-tools`を実行するに際し、初期設定として「細胞ファイル」・「コード化合物ファイル」という独自のファイルを`cell`・`code`ディレクトリへ配置しておく必要があります。

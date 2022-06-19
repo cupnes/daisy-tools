@@ -1,31 +1,31 @@
 CFLAGS = -Wall -Wextra -g
 # CFLAGS += -static
-SRCS   = main.c sysenv.c cell.c compound.c common.c
-BINS = dsy-sysenv dsy-exec-cell dsy-dump-cell dsy-edit-cell	\
-	dsy-cell2elf dsy-cell2pbm dsy-dump-ascii-list
+BINS = bin/dsy-sysenv bin/dsy-exec-cell bin/dsy-dump-cell	\
+	bin/dsy-edit-cell bin/dsy-cell2elf bin/dsy-cell2pbm	\
+	bin/dsy-dump-ascii-list
 WORK_DIR ?= $(HOME)/dsy-work
 
 all: $(BINS) samples
 
-dsy-sysenv: $(SRCS)
+bin/dsy-sysenv: main.c sysenv.c cell.c compound.c common.c
 	gcc $(CFLAGS) -o $@ $+
 
-dsy-exec-cell: dsy-exec-cell.c sysenv.c cell.c compound.c common.c
+bin/dsy-exec-cell: dsy-exec-cell.c sysenv.c cell.c compound.c common.c
 	gcc $(CFLAGS) -o $@ $+
 
-dsy-dump-cell: dsy-dump-cell.c sysenv.c cell.c compound.c common.c
+bin/dsy-dump-cell: dsy-dump-cell.c sysenv.c cell.c compound.c common.c
 	gcc $(CFLAGS) -o $@ $+
 
-dsy-edit-cell: dsy-edit-cell.c sysenv.c cell.c compound.c common.c
+bin/dsy-edit-cell: dsy-edit-cell.c sysenv.c cell.c compound.c common.c
 	gcc $(CFLAGS) -o $@ $+
 
-dsy-cell2elf: dsy-cell2elf.c sysenv.c cell.c compound.c common.c
+bin/dsy-cell2elf: dsy-cell2elf.c sysenv.c cell.c compound.c common.c
 	gcc $(CFLAGS) -o $@ $+
 
-dsy-cell2pbm: dsy-cell2pbm.c sysenv.c cell.c compound.c common.c
+bin/dsy-cell2pbm: dsy-cell2pbm.c sysenv.c cell.c compound.c common.c
 	gcc $(CFLAGS) -o $@ $+
 
-dsy-dump-ascii-list: dsy-dump-ascii-list.c sysenv.c cell.c compound.c common.c
+bin/dsy-dump-ascii-list: dsy-dump-ascii-list.c sysenv.c cell.c compound.c common.c
 	gcc $(CFLAGS) -o $@ $+
 
 samples:
@@ -36,19 +36,17 @@ busybox-static:
 	dpkg -x busybox-static*.deb $@
 
 setup: all
-	mkdir -p $(WORK_DIR)/bin
 	mkdir -p $(WORK_DIR)/cell
 	mkdir -p $(WORK_DIR)/code
 	mkdir -p $(WORK_DIR)/data
-	cp $(BINS) dsy-elf2asm $(WORK_DIR)/bin/
+	cp -r bin $(WORK_DIR)/
 	make -C samples setup WORK_DIR=$(WORK_DIR)
 
 setup_rootfs: all busybox-static
-	mkdir -p $(WORK_DIR)/bin
 	mkdir -p $(WORK_DIR)/cell
 	mkdir -p $(WORK_DIR)/code
 	mkdir -p $(WORK_DIR)/data
-	cp $(BINS) $(WORK_DIR)/bin/
+	cp -r bin $(WORK_DIR)/
 	cp busybox-static/bin/busybox $(WORK_DIR)/bin/
 	ln -sf busybox $(WORK_DIR)/bin/sh
 	make -C samples setup WORK_DIR=$(WORK_DIR)

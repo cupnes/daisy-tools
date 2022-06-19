@@ -61,7 +61,7 @@ sush:
 	sudo unshare -pf chroot $(WORK_DIR) sh
 
 clean:
-	rm -rf *~ tools/*~ $(BINS) busybox-static*
+	rm -rf *~ bin/*~ tools/*~ $(BINS) busybox-static*
 	make -C samples clean
 
 .PHONY: samples setup run sh sush clean

@@ -17,7 +17,7 @@ cleanup() {
 
 setup_exit() {
 	ln -s ../samples/dsy-name bin/dsy-name
-	ln -s ../samples/dsy-eval-exit bin/dsy-eval
+	ln -s ../samples/dsy-eval-exit_0 bin/dsy-eval
 
 	samples/create-init-cell
 

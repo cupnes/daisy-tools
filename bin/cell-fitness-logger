@@ -2,7 +2,7 @@
 
 set -uex
 
-PATH=$(pwd)/bin:$(pwd)/samples:${PATH}
+PATH=$(pwd)/bin:${PATH}
 
 CURRENT_HTML_PATH=log/current_html
 

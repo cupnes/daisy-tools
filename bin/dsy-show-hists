@@ -4,6 +4,6 @@ for log in $(ls log); do
 	clear
 	path=log/${log}
 	echo "[${path}]"
-	samples/dsy-log2hist ${path}
+	bin/dsy-log2hist ${path}
 	read _v
 done

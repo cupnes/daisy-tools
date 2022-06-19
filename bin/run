@@ -32,7 +32,7 @@ fi
 
 touch running
 
-samples/cell-fitness-logger >>cell-fitness-logger.log 2>&1 &
+bin/cell-fitness-logger >>cell-fitness-logger.log 2>&1 &
 logger_pid=$!
 echo "logger_pid=${logger_pid}"
 trap "kill ${logger_pid}" SIGINT
@@ -40,4 +40,4 @@ trap "kill ${logger_pid}" SIGINT
 bin/dsy-sysenv
 
 kill ${logger_pid}
-samples/cell-fitness-logger --oneshot >>cell-fitness-logger.log 2>&1
+bin/cell-fitness-logger --oneshot >>cell-fitness-logger.log 2>&1

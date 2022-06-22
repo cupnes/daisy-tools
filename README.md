@@ -10,6 +10,29 @@
 
  * http://yuma.ohgami.jp/
 
+## とりあえず試す
+諸々の説明は飛ばして、以下の手順で「何もせず正常終了(ステータス0でexit)するだけのELFバイナリ」を生成する実験が行えます。
+
+```sh
+$ sudo apt install build-essential libc6 bash jq
+$ git clone https://github.com/cupnes/daisy-tools.git
+$ cd daisy-tools
+$ make setup
+諸々のファイルを配置した作業ディレクトリを~/dsy-workに作成する
+$ cd ~/dsy-work
+$ samples/setup-sample exit
+実験用の諸々のファイルを配置する
+$ bin/run
+実行完了を待つ
+$ ls out.cell
+out.cell  # 目的の振る舞いをするように進化した細胞ファイル
+$ cp out.cell cell/
+$ bin/dsy-cell2elf out.cell out.elf  # 細胞ファイルをELFバイナリへ変換
+$ chmod +x out.elf
+$ strace ./out.elf
+何もせず正常終了(ステータス0でexit)している事がわかる
+```
+
 ## 環境構築
 ビルド環境・実行環境を説明します。なお、いずれもUnix/Linux環境を想定しています。ディストリビューションに依らない想定ですが、参考として、作者はDebianで開発しています。
 

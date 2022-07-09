@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -uex
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 NUM_CODES" 1>&2
+	exit 1
+fi
+
+num_codes=$1
+
+mkdir -p code
+
+for i in $(seq -w ${num_codes}); do
+	echo -en '\x07\x00\x00\x00\x00\x00\x00\x00' >code/mov_1_rdi_${i}
+	echo -en '\x48\xc7\xc7\x01\x00\x00\x00\x00' >>code/mov_1_rdi_${i}
+	echo -en '\x07\x00\x00\x00\x00\x00\x00\x00' >code/syscall_60_${i}
+	echo -en '\x48\x31\xc0\xb0\x3c\x0f\x05\x00' >>code/syscall_60_${i}
+	echo -en '\x01\x00\x00\x00\x00\x00\x00\x00' >code/ret_${i}
+	echo -en '\xc3\x00\x00\x00\x00\x00\x00\x00' >>code/ret_${i}
+done

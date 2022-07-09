@@ -44,9 +44,11 @@ create-add_1_rsi-codes: create-add_1_rsi-codes.c $(COMMON_SRCS)
 create-sub_1_rsi-codes: create-sub_1_rsi-codes.c $(COMMON_SRCS)
 	gcc $(CFLAGS) -o $@ $+
 
-setup: $(TARGETS) create-exit-codes create-syscall-code dsy-name	\
-	dsy-eval-init dsy-eval-exit dsy-eval-exit_0 dsy-eval-incr	\
-	dsy-eval-puta dsy-eval-puta_0 dsy-eval-hello setup-sample
+setup: $(TARGETS) create-exit-codes create-exit_1-codes			\
+	create-mov_1_rdi-codes create-syscall-code dsy-name		\
+	dsy-eval-init dsy-eval-exit dsy-eval-exit_0 dsy-eval-exit_1	\
+	dsy-eval-incr dsy-eval-puta dsy-eval-puta_0 dsy-eval-hello	\
+	setup-sample
 	mkdir -p $(WORK_DIR)/samples
 	cp $+ $(WORK_DIR)/samples/
 

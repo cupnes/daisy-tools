@@ -24,6 +24,15 @@ setup_exit() {
 	samples/create-exit-codes 100
 }
 
+setup_exit_1() {
+	ln -s ../samples/dsy-name bin/dsy-name
+	ln -s ../samples/dsy-eval-exit_1 bin/dsy-eval
+
+	samples/create-init-cell
+
+	samples/create-exit_1-codes 100
+}
+
 setup_puta() {
 	ln -s ../samples/dsy-name bin/dsy-name
 	ln -s ../samples/dsy-eval-puta bin/dsy-eval
@@ -47,6 +56,10 @@ cleanup
 case "$1" in
 "exit")
 	setup_exit
+	;;
+
+"exit_1")
+	setup_exit_1
 	;;
 
 "puta")

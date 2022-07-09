@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# set -uex
+set -ue
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 CELL_FILE" 1>&2
+	exit 200
+fi
+
+cell_file=$1
+bin/dsy-cell2elf $cell_file ${cell_file}.elf
+chmod +x ${cell_file}.elf
+exit_code=0
+./${cell_file}.elf >/dev/null 2>&1 || exit_code=$?
+rm ${cell_file}.elf
+if [ ${exit_code} -eq 1 ]; then
+	fitness=100
+else
+	fitness=50
+fi
+exit $fitness

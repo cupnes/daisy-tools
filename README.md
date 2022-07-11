@@ -14,7 +14,7 @@
 諸々の説明は飛ばして、以下の手順で「何もせず正常終了(ステータス0でexit)するだけのELFバイナリ」を生成する実験が行えます。
 
 ```sh
-$ sudo apt install build-essential libc6 bash jq
+$ sudo apt install build-essential libc6 bash jq strace
 $ git clone https://github.com/cupnes/daisy-tools.git
 $ cd daisy-tools
 $ make setup

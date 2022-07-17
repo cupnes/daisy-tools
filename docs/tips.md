@@ -119,3 +119,9 @@ bin/dsy-eval: 18 行: 357401 Segmentation fault      ./${TMP_NAME}.elf > ${TMP_N
 - [ランダムに選んだ命令をランダムに選んだコドンの直後に新たなコドンとして挿入する(`INSERT_NEXT`)](https://github.com/cupnes/daisy-tools/blob/3ac67d0dc6faaa07269818e3fb6b3d4f53c59a17/cell.c#L494-L495)
 - [ランダムに選んだコドンをランダムに選んだ命令のコドンへ変更する(`MODIFY`)](https://github.com/cupnes/daisy-tools/blob/3ac67d0dc6faaa07269818e3fb6b3d4f53c59a17/cell.c#L498-L499)
 - [ランダムに選んだコドンを削除する(`REMOVE`)](https://github.com/cupnes/daisy-tools/blob/3ac67d0dc6faaa07269818e3fb6b3d4f53c59a17/cell.c#L502-L503)
+
+なお、突然変異すると、寿命は突然変異した結果のコドン数に比例した値が設定される。計算式は以下の通り([Ref](https://github.com/cupnes/daisy-tools/blob/205bca87e693d22f2f2e8f245f8a0fbbff479766/cell.c#L514-L516))。
+
+> 寿命 = 30 * コドン数 - 20
+
+DNAが長くなるにつれ、それに応じて寿命も延びないと、「寿命が尽きるまでに必要なコード化合物を集めきれない」、ということになってしまう。そのため、コドン数に比例して寿命が長くなるようにしている。ただ、この一次関数の傾きや切片は経験的に決めたもので深い根拠は無いため、必要に応じて変更して構わない。(そもそも一次関数で無くても良いかもしれない。)

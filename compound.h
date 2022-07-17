@@ -19,8 +19,15 @@ typedef unsigned long long comp_data_t;
 
 extern char comp_type2dir[MAX_COMP_TYPE][MAX_DIR_LEN];
 
+/* 化合物 */
 struct __attribute__((packed)) compound {
+	/* 長さ[バイト] */
 	unsigned long long len;
+	/* 次の共用体フィールドで指定する内容物の長さ。
+	 * 共用体フィールドのサイズからも分かる通り、
+	 * 指定できる最大サイズは8バイト。 */
+
+	/* 内容物 */
 	union {
 		unsigned long long int64;
 		unsigned char byte[8];

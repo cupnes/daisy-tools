@@ -15,40 +15,11 @@ daisy-toolsが扱う独自のファイルフォーマットを説明します。
 
 ### ファイルフォーマット
 
-細胞ファイルは「属性情報」・「DNA」・「タンパク質」で構成されます。
-
-#### 属性情報
-
-[`cell_attributes`構造体の`filename`以外のフィールド](https://github.com/cupnes/daisy-tools/blob/89613d9fcccea2a4fea078ba394b314cac674d17/cell.h#L19-L31)がここに配置されています。
-
-| オフセット[バイト] | フィールド名 | 型/長さ |
+| オフセット[バイト] | 内容 | サイズ[バイト] |
 | --- | --- | --- |
-| 0 | 寿命(`life_duration`)[サイクル数][^life_duration_left] | 符号なし32ビット整数 |
-| 4 | 余命(`life_left`)[サイクル数][^life_duration_left] | 符号なし32ビット整数 |
-| 8 | 適応度(`fitness`)[%] | 符号なし8ビット整数 |
-| 9 | 引数の数(`num_args`)[^not_used_with_dsy-eval] | 符号なし8ビット整数 |
-| 10 | 取得済み引数の数(`has_args`)[^not_used_with_dsy-eval] | 符号なし8ビット整数 |
-| 11 | 戻り値の有無(`has_retval`)[^not_used_with_dsy-eval] | ブール(符号なし8ビット整数) |
-| 12 | 関数サイズ(`func_size`)[バイト] | 符号なし32ビット整数 |
-| 16 | 引数バッファ(`args_buf[CELL_MAX_ARGS]`)[^not_used_with_dsy-eval] | データ化合物型(64ビット) * 4 |
-| 48 | DNAの長さ(コドンの数)(`num_codns`) | 符号なし64ビット整数 |
-
-[^life_duration_left]: 寿命と余命のフィールドをそれぞれ設けている理由は、細胞分裂時に[突然変異しない場合は親の寿命と同じ寿命を子に設定する](https://github.com/cupnes/daisy-tools/blob/89613d9fcccea2a4fea078ba394b314cac674d17/cell.c#L536-L537)ためです。そして、1周期毎に余命フィールドをデクリメントしていきます。寿命フィールドは変更されることは無く、細胞分裂時に使われます。ちなみに、突然変異する場合、子の寿命は[突然変異後のDNAの長さ(コドンの数)に比例して決められます](https://github.com/cupnes/daisy-tools/blob/89613d9fcccea2a4fea078ba394b314cac674d17/cell.c#L514-L516)。
-[^not_used_with_dsy-eval]: 細胞の実行と評価に`dsy-eval`ファイルを使用する新設計では使用しないフィールドです。
-
-#### DNA
-
-| オフセット[バイト] | フィールド名 | 型/長さ |
-| --- | --- | --- |
-| 56 | コドンの配列 | [コドン構造体](https://github.com/cupnes/daisy-tools/blob/89613d9fcccea2a4fea078ba394b314cac674d17/cell.h#L36-L55)(16バイト) * `num_codns` |
-
-#### タンパク質の列
-
-タンパク質の列、すなわち機械語命令のバイナリ列が配置されています。
-
-| オフセット[バイト] | フィールド名 | 型/長さ |
-| --- | --- | --- |
-| 56 + (16 * `num_codns`) | タンパク質の列 | `func_size`バイトのバイナリ |
+| 0 | 属性情報([`cell_attributes`構造体の`num_codns`まで](https://github.com/cupnes/daisy-tools/blob/b22ce56350680ea8536c1a3c04739c9cd98ea792/cell.h#L19-L50)の内容) | 56 |
+| 56 | DNA(`num_codns`個分の[`codon`構造体](https://github.com/cupnes/daisy-tools/blob/b22ce56350680ea8536c1a3c04739c9cd98ea792/cell.h#L56-L100)の内容) | 16 * `num_codns` |
+| 56 + (16 * `num_codns`) | タンパク質の列(機械語命令のバイナリ列) | `func_size` |
 
 ### 備考
 

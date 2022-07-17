@@ -512,7 +512,7 @@ static bool_t mutation(struct cell *cell, struct cell *cell_new)
 	}
 
 	/* コドン数を元に寿命を計算 */
-	/* 公式: 寿命 = 30 * コドン数 - 20 */
+	/* 計算式: 寿命 = 30 * コドン数 - 20 */
 	cell_new->attr.life_duration = (30 * cell_new->attr.num_codns) - 20;
 	cell_new->attr.life_left = cell_new->attr.life_duration;
 	syslog(LOG_DEBUG, "cell[%s,new]: new cell's life_duration is %d, "

@@ -115,7 +115,7 @@ bin/dsy-eval: 18 行: 357401 Segmentation fault      ./${TMP_NAME}.elf > ${TMP_N
 
 突然変異の種別は以下の通り。
 
-- `INSERT_PREV`
-- `INSERT_NEXT`
-- `MODIFY`
-- `REMOVE`
+- [ランダムに選んだ命令をランダムに選んだコドンの直前に新たなコドンとして挿入する(`INSERT_PREV`)](https://github.com/cupnes/daisy-tools/blob/3ac67d0dc6faaa07269818e3fb6b3d4f53c59a17/cell.c#L490-L491)
+- [ランダムに選んだ命令をランダムに選んだコドンの直後に新たなコドンとして挿入する(`INSERT_NEXT`)](https://github.com/cupnes/daisy-tools/blob/3ac67d0dc6faaa07269818e3fb6b3d4f53c59a17/cell.c#L494-L495)
+- [ランダムに選んだコドンをランダムに選んだ命令のコドンへ変更する(`MODIFY`)](https://github.com/cupnes/daisy-tools/blob/3ac67d0dc6faaa07269818e3fb6b3d4f53c59a17/cell.c#L498-L499)
+- [ランダムに選んだコドンを削除する(`REMOVE`)](https://github.com/cupnes/daisy-tools/blob/3ac67d0dc6faaa07269818e3fb6b3d4f53c59a17/cell.c#L502-L503)

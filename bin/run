@@ -4,7 +4,7 @@
 set -ue
 
 show_usage() {
-	echo "Usage: $0 [-d|-h]" 1>&2
+	echo "Usage: $0 [-h]" 1>&2
 }
 
 if [ $# -ge 2 ]; then
@@ -14,10 +14,6 @@ fi
 
 if [ $# -eq 1 ]; then
 	case "$1" in
-	"-d")
-		touch debug
-		;;
-
 	"-h")
 		show_usage
 		exit 0

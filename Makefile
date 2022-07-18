@@ -1,8 +1,7 @@
 CFLAGS = -Wall -Wextra -g
 # CFLAGS += -static
 BINS = bin/dsy-sysenv bin/dsy-exec-cell bin/dsy-dump-cell	\
-	bin/dsy-edit-cell bin/dsy-cell2elf bin/dsy-cell2pbm	\
-	bin/dsy-dump-ascii-list
+	bin/dsy-edit-cell bin/dsy-cell2elf bin/dsy-cell2pbm
 WORK_DIR ?= $(HOME)/dsy-work
 
 all: $(BINS) samples
@@ -23,9 +22,6 @@ bin/dsy-cell2elf: dsy-cell2elf.c sysenv.c cell.c compound.c common.c
 	gcc $(CFLAGS) -o $@ $+
 
 bin/dsy-cell2pbm: dsy-cell2pbm.c sysenv.c cell.c compound.c common.c
-	gcc $(CFLAGS) -o $@ $+
-
-bin/dsy-dump-ascii-list: dsy-dump-ascii-list.c sysenv.c cell.c compound.c common.c
 	gcc $(CFLAGS) -o $@ $+
 
 samples:

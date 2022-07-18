@@ -8,26 +8,6 @@
 
 例えば、`cell`ディレクトリ内の`0cbb3f5a50`という細胞ファイルの内容を`dsy-dump-cell`で表示する際は、`bin/dsy-dump-cell 0cbb3f5a50`となる。
 
-### `cell-fitness-logger`の使い方
-
-`samples/run`で実行すれば、`dsy-sysenv`と共に適切に起動される。
-
-単体で実行する場合は以下の通り。
-
-```bash
-$ samples/cell-fitness-logger >>cell-fitness-logger.log 2>&1
-```
-
-### daisy-toolsの停止方法
-
-`bin/run`あるいは`bin/dsy-sysenv`で起動されたdaisy-toolsのシステムは、`running`ファイルを消すことで停止できる。
-
-### daisy-toolsの再開方法
-
-前提: `running`ファイルを消す方法で停止していること。
-
-`bin/run`あるいは`dsy-sysenv`を実行するだけでOK。(特に再開のための特別な作業は不要。)
-
 ### 周期処理の間にウェイト時間を設定する方法
 
 `dsy-sysenv`のコマンドライン引数(第1引数)にマイクロ秒単位で指定する。(デフォルトは`1000000`(1秒))

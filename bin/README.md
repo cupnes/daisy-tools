@@ -46,6 +46,12 @@ $ bin/cell-fitness-logger
 
 `cell-fitness-logger`から実行され、適応度別細胞一覧のヒストグラムや各細胞の詳細のHTMLを生成しているスクリプトです。HTMLファイルの内容を変更したい場合はこのスクリプトを変更してください。
 
+なお、`strace`コマンドを使用しますので、無ければインストールしてください。Debian系ディストリビューションの場合、`apt`コマンドを使用して以下のようにインストール可能です。
+
+```bash
+$ sudo apt install strace
+```
+
 ## create-treeimg-from-syslog
 
 `save-recent-syslog`を使ってsyslogのログを保存するとカレントディレクトリに`syslog.log.gz`というファイル名ができあがります。この状態でこのコマンドを実行すると、その中からdaisy-toolsのログを抽出し、これまで誕生してきた細胞の親子関係のグラフ(家系図のようなもの)を`tree.dot`と`tree.svg`というファイル名で作成します。
@@ -57,6 +63,12 @@ $ bin/cell-fitness-logger
 細胞ファイルをELFファイルへ変換します。
 
 ### 使い方
+
+`dot`コマンドを使用しますので、無ければgraphvizをインストールしてください。Debian系ディストリビューションの場合、`apt`コマンドを使用して以下のようにインストール可能です。
+
+```bash
+$ sudo apt install graphviz
+```
 
 引数で細胞ファイル名と出力ファイル名を指定して実行してください。
 
@@ -164,7 +176,13 @@ ELFファイルを生成する現状のdaisy-toolsでは使用できません。
 
 ### 使い方
 
-引数にELFファイルを指定して実行してください。
+まず、`objdump`コマンドを使用しますので、無ければbinutilsをインストールしてください。Debian系ディストリビューションの場合は`apt`コマンドを使用して以下のようにインストール可能です。
+
+```bash
+$ sudo apt install binutils
+```
+
+そして、引数にELFファイルを指定して実行してください。
 
 > Usage: bin/dsy-elf2asm ELF_FILENAME [ASM_FILENAME]
 

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# set -uex
+set -ue
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 CELL_FILE" 1>&2
+	exit 200
+fi
+
+cell_file=$1
+bin/dsy-cell2elf $cell_file ${cell_file}.elf
+chmod +x ${cell_file}.elf
+sudo unshare -pf chroot --userspec=$(id -u):$(id -g) $(pwd) ./${cell_file}.elf >/dev/null 2>&1 && fitness=100 || fitness=50
+rm ${cell_file}.elf
+exit $fitness

@@ -2,9 +2,11 @@
 
 daisy-toolsの理解を深めるには試してみるのが一番です。ここではその参考になりそうな演習問題をまとめます。
 
-## 演習1：daisy-toolsをセットアップとexit0で終了する実行バイナリ生成を試す
+## 演習1：daisy-toolsのセットアップとexit0で終了する実行バイナリ生成を試す
 
 何はともあれ、daisy-toolsがどの様に動くものなのか、てっとりばやく試してみましょう。
+
+「何もせず正常終了(ステータス0でexit)するだけのELFバイナリ」を生成してみます。
 
 ```bash
 $ sudo apt install build-essential libc6 bash jq strace

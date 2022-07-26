@@ -46,7 +46,7 @@ create_detail_page()
 	jq .attr ${cell_name}.json
 	echo '</pre>'
 
-	echo '<h2>各コドンの状態</h2>'
+	echo '<h2>DNAの状態</h2>'
 	echo '<pre class=box>'
 	jq .codn_list[] ${cell_name}.json
 	echo '</pre>'

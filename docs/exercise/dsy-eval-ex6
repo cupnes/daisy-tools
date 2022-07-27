@@ -1,0 +1,9 @@
+#!/bin/sh
+
+cell_file=$1
+t=$(bin/dsy-dump-cell -j $cell_file | jq '.codn_list[0].byte[0]')
+if [ $t -eq 72 ]; then
+	exit 100
+else
+	exit 50
+fi

@@ -8,6 +8,27 @@
 
 例えば、`cell`ディレクトリ内の`0cbb3f5a50`という細胞ファイルの内容を`dsy-dump-cell`で表示する際は、`bin/dsy-dump-cell 0cbb3f5a50`となる。
 
+### 実験を中断してやり直す方法
+
+daisy-toolsを停止し、必要に応じて実験設定をやり直し、daisy-toolsを再開させれば良い。
+
+1. daisy-toolsを停止させる
+   ```bash
+   $ rm running
+   ```
+2. 実験設定
+   - 必要に応じて以下を行う
+     - `bin`ディレクトリの`dsy-eval`・`dsy-name`の設定
+     - `cell`ディレクトリ・`code`ディレクトリ内のファイル配置
+3. daisy-toolsを開始させる
+   ```bash
+   $ bin/run
+   ```
+   あるいは
+   ```bash
+   $ bin/dsy-sysenv
+   ```
+
 ### 周期処理の間にウェイト時間を設定する方法
 
 `dsy-sysenv`のコマンドライン引数(第1引数)にマイクロ秒単位で指定する。(デフォルトは`1000000`(1秒))

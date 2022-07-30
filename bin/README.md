@@ -237,7 +237,7 @@ daisy-toolsのメインプロセスです。起動するとdaisy-toolsの周期�
 
 ## run
 
-daisy-toolsを`cell-fitness-logger`と共に起動するシェルスクリプトです。
+daisy-toolsのメインプロセスである[`dsy-sysenv`](#dsy-sysenv)を[`cell-fitness-logger`](#cell-fitness-logger)と共に起動するシェルスクリプトです。
 
 ### 使い方
 
@@ -248,9 +248,12 @@ daisy-toolsを`cell-fitness-logger`と共に起動するシェルスクリプト
 - `-h`
   - Usageを表示します
 
+停止と再開の方法は[`dsy-sysenv`](#dsy-sysenv)と同じです。同時に起動される`cell-fitness-logger`は`dsy-sysenv`に連動して停止させるようになっています。
+
 ### 備考
 
-`cell-fitness-logger`や`dsy-sysenv`の周期動作のインターバルをデフォルトから変更したい場合は、このシェルスクリプトを書き換えて、引数で指定するようにしてください。
+- `cell-fitness-logger`や`dsy-sysenv`の周期動作のインターバルをデフォルトから変更したい場合は、このシェルスクリプトを書き換えて、引数で指定するようにしてください
+- `dsy-sysenv`がエラー終了した場合、`cell-fitness-logger`だけ残ってしまうので、`cell-fitness-logger`は`kill`コマンド等で終了させてください
 
 ## save-recent-syslog
 

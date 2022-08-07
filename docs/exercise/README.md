@@ -146,7 +146,7 @@ daisy-toolsは「細胞」や「化合物」といった要素をファイルで
      ```
 4. daisy-toolsを開始
 5. 適応度100の細胞が生まれ、daisy-toolsが停止するのを待つ
-6. `log`ディレクトリ以下のHTMLを見て、適応度100の細胞が1つ居る事を確認
+6. `log`ディレクトリ以下のHTMLを見て、適応度100の細胞が少なくとも1つは居る事を確認
 7. `bin/run`で`bin/cell-fitness-logger`の引数に60を設定し、60秒周期でHTMLログが生成されるようにする
    - `bin/cell-fitness-logger`自体もシェルスクリプトで、中を見ればusageについて書かれています
 8. `endless`ファイルを配置
